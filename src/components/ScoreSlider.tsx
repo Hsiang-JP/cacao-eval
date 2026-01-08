@@ -49,7 +49,7 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
   const sliderStyle = customColor ? { accentColor: customColor } : undefined;
 
   return (
-    <div className={`bg-white p-4 rounded-xl shadow-sm border border-cacao-100 transition-all ${disabled ? 'opacity-80 pointer-events-none' : ''}`}>
+    <div id={id} className={`bg-white p-4 rounded-xl shadow-sm border border-cacao-100 transition-all ${disabled ? 'opacity-80 pointer-events-none' : ''}`}>
       {/* Header Row */}
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">

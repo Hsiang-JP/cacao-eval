@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import ScoreSlider from './components/ScoreSlider';
 import FlavorRadar from './components/FlavorRadar';
+import MobileNav from './components/MobileNav';
 import { GradingSession, SampleMetadata, QualityAttribute, SubAttribute } from './types';
 import {
   INITIAL_ATTRIBUTES,
@@ -323,7 +324,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-cacao-50 text-gray-800 font-sans pb-20">
       <Header language={language} onLanguageChange={setLanguage} />
 
-      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+      <main id="main-content" className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
 
         {/* Top Section: Metadata */}
         <section className={`bg-white p-6 rounded-xl shadow-sm border border-cacao-100 transition-opacity ${isEvaluationEnded ? 'opacity-80 pointer-events-none' : ''}`}>
@@ -566,6 +567,13 @@ const App: React.FC = () => {
         </div>
 
       </main>
+
+      <MobileNav
+        attributes={session.attributes}
+        language={language}
+        isEvaluationStarted={isEvaluationStarted}
+        isEvaluationEnded={isEvaluationEnded}
+      />
     </div>
   );
 };
