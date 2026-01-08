@@ -12,11 +12,11 @@ const Header: React.FC<HeaderProps> = ({ language, onLanguageChange }) => {
   const t = TRANSLATIONS[language];
 
   // Local images from the public/ folder
-  const FLAVOR_WHEEL_URL_EN = "/flavor_wheel_en.png";
-  const FLAVOR_WHEEL_URL_ES = "/flavor_wheel_es.png";
+  const FLAVOR_WHEEL_URL_EN = "flavor_wheel_en.png";
+  const FLAVOR_WHEEL_URL_ES = "flavor_wheel_es.png";
 
-  const SCORE_INSTRUCTION_URL_EN = "/score_instruction_en.png";
-  const SCORE_INSTRUCTION_URL_ES = "/score_instruction_es.png";
+  const SCORE_INSTRUCTION_URL_EN = "score_instruction_en.png";
+  const SCORE_INSTRUCTION_URL_ES = "score_instruction_es.png";
 
   const currentWheelUrl = language === 'es' ? FLAVOR_WHEEL_URL_ES : FLAVOR_WHEEL_URL_EN;
   const currentScoreUrl = language === 'es' ? SCORE_INSTRUCTION_URL_ES : SCORE_INSTRUCTION_URL_EN;
@@ -27,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({ language, onLanguageChange }) => {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
-              <img src="/logo-cacao.svg" alt="Cacao of Excellence Logo" className="h-12 w-auto" />
+              <img src="logo-cacao.svg" alt="Cacao of Excellence Logo" className="h-12 w-auto" />
             </div>
             <div>
               <h1 className="font-serif text-2xl font-bold tracking-wide">{t.title}</h1>
