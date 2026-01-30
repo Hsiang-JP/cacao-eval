@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ language, onLanguageChange }) => {
   return (
     <>
       <header className="bg-cacao-900 text-cacao-50 py-6 px-4 shadow-lg sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="w-full px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
               <img src="logo-cacao.svg" alt="Cacao of Excellence Logo" className="h-12 w-auto" />
@@ -37,6 +37,12 @@ const Header: React.FC<HeaderProps> = ({ language, onLanguageChange }) => {
 
           <div className="flex gap-4 text-sm font-medium items-center">
             <button
+              onClick={() => window.location.pathname !== '/samples' && (window.location.href = '/samples')}
+              className={`flex items-center gap-2 transition-colors ${window.location.pathname === '/samples' ? 'text-white font-bold' : 'text-cacao-200 hover:text-white'}`}
+            >
+              <FileText size={16} /> {language === 'es' ? 'Muestras' : 'Samples'}
+            </button>
+            <button
               onClick={() => onLanguageChange(language === 'en' ? 'es' : 'en')}
               className="flex items-center gap-2 text-cacao-200 hover:text-white transition-colors bg-cacao-800 px-3 py-1 rounded-full"
             >
@@ -48,9 +54,11 @@ const Header: React.FC<HeaderProps> = ({ language, onLanguageChange }) => {
             >
               <Award size={16} /> {t.guidelines}
             </button>
+            {/* 
             <button className="flex items-center gap-2 text-cacao-200 hover:text-white transition-colors opacity-50 cursor-not-allowed hidden sm:flex">
               <FileText size={16} /> {t.history}
-            </button>
+            </button> 
+            */}
           </div>
         </div>
       </header>

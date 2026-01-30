@@ -36,6 +36,21 @@ export const TRANSLATIONS = {
     calculated: "Calculated from sub-attributes",
     endEvaluation: "End Evaluation",
     startEvaluation: "Start Evaluation",
+    // New keys
+    savedSamples: 'Saved Samples',
+    newEvaluation: 'New Evaluation',
+    searchSamples: 'Search samples...',
+    exportAllCSV: 'Export All CSV',
+    importSamples: 'Import Samples',
+    selectForComparison: 'Select for Comparison',
+    compare: 'Compare',
+    samplesSaved: 'samples saved',
+    delete: 'Delete',
+    viewDetails: 'View Details',
+    clone: 'Clone',
+    noSamples: 'No samples found',
+    actions: 'Actions',
+    viewAndEdit: 'View & Edit'
   },
   es: {
     title: "Cacao de Excelencia",
@@ -71,6 +86,21 @@ export const TRANSLATIONS = {
     calculated: "Calculado a partir de sub-atributos",
     endEvaluation: "Finalizar Evaluación",
     startEvaluation: "Iniciar Evaluación",
+    // New keys
+    savedSamples: 'Muestras Guardadas',
+    newEvaluation: 'Nueva Evaluación',
+    searchSamples: 'Buscar muestras...',
+    exportAllCSV: 'Exportar Todo CSV',
+    importSamples: 'Importar Muestras',
+    selectForComparison: 'Seleccionar para Comparar',
+    compare: 'Comparar',
+    samplesSaved: 'muestras guardadas',
+    delete: 'Eliminar',
+    viewDetails: 'Ver Detalles',
+    clone: 'Clonar',
+    noSamples: 'No se encontraron muestras',
+    actions: 'Acciones',
+    viewAndEdit: 'Ver y Editar'
   }
 };
 
@@ -437,8 +467,8 @@ export const CSV_HEADERS_EN = [
   "Smoky",
   "Other Off-Flavour",
   "Other Off-Flavour Description",
-  "Overall Flavour comment\nkey words related to the description of the flavour that is perceived",
-  "Feedback comment\nkey words of feedback to the producers",
+  "Overall Flavour comment",
+  "Feedback comment",
   "Global Quality (0 - 10)",
   "Uniqueness",
   "Complexity",
@@ -452,8 +482,8 @@ export const CSV_HEADERS_EN = [
 
 export const CSV_HEADERS_ES = [
   "Orden Original",
-  "Fecha de evaluación (presione Ctrl y;)",
-  "Hora de evaluación (presione Ctrl y;)",
+  "Fecha de evaluación",
+  "Hora de evaluación",
   "Evaluador",
   "ID de muestra",
   "Información de muestra",
@@ -505,8 +535,8 @@ export const CSV_HEADERS_ES = [
   "Humo",
   "Otros",
   "Descripción",
-  "Comentario de sabor general\npalabras clave relacionadas con la descripción del sabor que se percibe",
-  "Comentarios de comentarios\npalabras clave de retroalimentación a los productores",
+  "Comentario de sabor general",
+  "Comentarios de comentarios",
   "Calidad global (0 - 10)",
   "Particularidad (calidad de único)",
   "Complejidad",
