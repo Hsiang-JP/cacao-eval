@@ -559,7 +559,7 @@ const EvaluatePage: React.FC = () => {
                   <div className="px-4 pb-4 space-y-6">
                     {/* Global Quality Slider */}
                     <div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 touch-pan-y">
                         <input
                           type="range" min="0" max="10" step="0.5"
                           value={session.globalQuality}

@@ -98,9 +98,9 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
           opacity: isExpanded ? 1 : 0
         }}
       >
-        <div className="px-4 pb-4 space-y-3">
+        <div className="px-6 md:px-4 pb-6 md:pb-4 space-y-6 md:space-y-3">
           {/* Main Slider */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 touch-pan-y">
             <input
               id={uniqueId}
               type="range"
@@ -123,7 +123,7 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
 
           {/* Sub-attributes / Flavor Wheel */}
           {hasSubAttributes && (
-            <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-cacao-50 rounded-lg border border-cacao-100">
+            <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-cacao-50 rounded-lg border border-cacao-100 touch-pan-y">
               {subAttributes.map(sub => (
                 <div key={sub.id} className="flex flex-col gap-1">
                   <div className="flex justify-between items-center">
