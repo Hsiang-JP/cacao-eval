@@ -1,5 +1,6 @@
 import { StoredSample } from './dbService';
 import { CSV_HEADERS_EN, CSV_HEADERS_ES, INITIAL_ATTRIBUTES, INITIAL_QUALITY_ATTRIBUTES } from '../constants';
+import { FlavorAttribute } from '../types';
 
 export const generateCSVRow = (sample: StoredSample, language: 'en' | 'es'): (string | number)[] => {
     const getDate = () => {
@@ -10,6 +11,27 @@ export const generateCSVRow = (sample: StoredSample, language: 'en' | 'es'): (st
         return sample.date;
     };
 
+    // 1. Create a Map for O(1) attribute access
+    const attrMap = new Map<string, FlavorAttribute>();
+    sample.attributes.forEach(attr => attrMap.set(attr.id, attr));
+
+    // 2. Helper to get scores safely
+    const getScore = (attrId: string, subId?: string): number => {
+        const attr = attrMap.get(attrId);
+        if (!attr) return 0;
+        if (subId && attr.subAttributes) {
+            return attr.subAttributes.find(s => s.id === subId)?.score || 0;
+        }
+        return attr.score;
+    };
+
+    // 3. Helper to get sub-attribute description safely
+    const getDescription = (attrId: string, subId: string): string => {
+        const attr = attrMap.get(attrId);
+        return attr?.subAttributes?.find(s => s.id === subId)?.description || '';
+    };
+
+    // 4. Construct the row
     return [
         "", // Original Ordering
         getDate(),
@@ -17,73 +39,74 @@ export const generateCSVRow = (sample: StoredSample, language: 'en' | 'es'): (st
         sample.evaluator,
         sample.sampleCode,
         sample.sampleInfo,
-        sample.attributes.find(a => a.id === 'cacao')?.score || 0,
-        // Acidity
-        sample.attributes.find(a => a.id === 'acidity')?.score || 0,
-        sample.attributes.find(a => a.id === 'acidity')?.subAttributes?.find(s => s.id === 'acid_fruity')?.score || 0,
-        sample.attributes.find(a => a.id === 'acidity')?.subAttributes?.find(s => s.id === 'acid_acetic')?.score || 0,
-        sample.attributes.find(a => a.id === 'acidity')?.subAttributes?.find(s => s.id === 'acid_lactic')?.score || 0,
-        sample.attributes.find(a => a.id === 'acidity')?.subAttributes?.find(s => s.id === 'acid_mineral')?.score || 0,
+        getScore('cacao'),
 
-        sample.attributes.find(a => a.id === 'bitterness')?.score || 0,
-        sample.attributes.find(a => a.id === 'astringency')?.score || 0,
+        // Acidity
+        getScore('acidity'),
+        getScore('acidity', 'acid_fruity'),
+        getScore('acidity', 'acid_acetic'),
+        getScore('acidity', 'acid_lactic'),
+        getScore('acidity', 'acid_mineral'),
+
+        getScore('bitterness'),
+        getScore('astringency'),
 
         // Fresh Fruit
-        sample.attributes.find(a => a.id === 'fresh_fruit')?.score || 0,
-        sample.attributes.find(a => a.id === 'fresh_fruit')?.subAttributes?.find(s => s.id === 'ff_berry')?.score || 0,
-        sample.attributes.find(a => a.id === 'fresh_fruit')?.subAttributes?.find(s => s.id === 'ff_citrus')?.score || 0,
-        sample.attributes.find(a => a.id === 'fresh_fruit')?.subAttributes?.find(s => s.id === 'ff_dark')?.score || 0,
-        sample.attributes.find(a => a.id === 'fresh_fruit')?.subAttributes?.find(s => s.id === 'ff_pulp')?.score || 0,
-        sample.attributes.find(a => a.id === 'fresh_fruit')?.subAttributes?.find(s => s.id === 'ff_tropical')?.score || 0,
+        getScore('fresh_fruit'),
+        getScore('fresh_fruit', 'ff_berry'),
+        getScore('fresh_fruit', 'ff_citrus'),
+        getScore('fresh_fruit', 'ff_dark'),
+        getScore('fresh_fruit', 'ff_pulp'),
+        getScore('fresh_fruit', 'ff_tropical'),
 
         // Browned Fruit
-        sample.attributes.find(a => a.id === 'browned_fruit')?.score || 0,
-        sample.attributes.find(a => a.id === 'browned_fruit')?.subAttributes?.find(s => s.id === 'bf_dried')?.score || 0,
-        sample.attributes.find(a => a.id === 'browned_fruit')?.subAttributes?.find(s => s.id === 'bf_brown')?.score || 0,
-        sample.attributes.find(a => a.id === 'browned_fruit')?.subAttributes?.find(s => s.id === 'bf_overripe')?.score || 0,
+        getScore('browned_fruit'),
+        getScore('browned_fruit', 'bf_dried'),
+        getScore('browned_fruit', 'bf_brown'),
+        getScore('browned_fruit', 'bf_overripe'),
 
         // Vegetal
-        sample.attributes.find(a => a.id === 'vegetal')?.score || 0,
-        sample.attributes.find(a => a.id === 'vegetal')?.subAttributes?.find(s => s.id === 'veg_green')?.score || 0,
-        sample.attributes.find(a => a.id === 'vegetal')?.subAttributes?.find(s => s.id === 'veg_earthy')?.score || 0,
+        getScore('vegetal'),
+        getScore('vegetal', 'veg_green'),
+        getScore('vegetal', 'veg_earthy'),
 
         // Floral
-        sample.attributes.find(a => a.id === 'floral')?.score || 0,
-        sample.attributes.find(a => a.id === 'floral')?.subAttributes?.find(s => s.id === 'flo_orange')?.score || 0,
-        sample.attributes.find(a => a.id === 'floral')?.subAttributes?.find(s => s.id === 'flo_flowers')?.score || 0,
+        getScore('floral'),
+        getScore('floral', 'flo_orange'),
+        getScore('floral', 'flo_flowers'),
 
         // Woody
-        sample.attributes.find(a => a.id === 'woody')?.score || 0,
-        sample.attributes.find(a => a.id === 'woody')?.subAttributes?.find(s => s.id === 'wood_light')?.score || 0,
-        sample.attributes.find(a => a.id === 'woody')?.subAttributes?.find(s => s.id === 'wood_dark')?.score || 0,
-        sample.attributes.find(a => a.id === 'woody')?.subAttributes?.find(s => s.id === 'wood_resin')?.score || 0,
+        getScore('woody'),
+        getScore('woody', 'wood_light'),
+        getScore('woody', 'wood_dark'),
+        getScore('woody', 'wood_resin'),
 
         // Spice
-        sample.attributes.find(a => a.id === 'spice')?.score || 0,
-        sample.attributes.find(a => a.id === 'spice')?.subAttributes?.find(s => s.id === 'sp_spices')?.score || 0,
-        sample.attributes.find(a => a.id === 'spice')?.subAttributes?.find(s => s.id === 'sp_tobacco')?.score || 0,
-        sample.attributes.find(a => a.id === 'spice')?.subAttributes?.find(s => s.id === 'sp_savory')?.score || 0,
+        getScore('spice'),
+        getScore('spice', 'sp_spices'),
+        getScore('spice', 'sp_tobacco'),
+        getScore('spice', 'sp_savory'),
 
         // Nutty
-        sample.attributes.find(a => a.id === 'nutty')?.score || 0,
-        sample.attributes.find(a => a.id === 'nutty')?.subAttributes?.find(s => s.id === 'nut_meat')?.score || 0,
-        sample.attributes.find(a => a.id === 'nutty')?.subAttributes?.find(s => s.id === 'nut_skin')?.score || 0,
+        getScore('nutty'),
+        getScore('nutty', 'nut_meat'),
+        getScore('nutty', 'nut_skin'),
 
-        sample.attributes.find(a => a.id === 'caramel')?.score || 0,
-        sample.attributes.find(a => a.id === 'sweetness')?.score || 0,
-        sample.attributes.find(a => a.id === 'roast')?.score || 0,
+        getScore('caramel'),
+        getScore('sweetness'),
+        getScore('roast'),
 
         // Defects
-        sample.attributes.find(a => a.id === 'defects')?.score || 0,
-        sample.attributes.find(a => a.id === 'defects')?.subAttributes?.find(s => s.id === 'def_dirty')?.score || 0,
-        sample.attributes.find(a => a.id === 'defects')?.subAttributes?.find(s => s.id === 'def_mold')?.score || 0,
-        sample.attributes.find(a => a.id === 'defects')?.subAttributes?.find(s => s.id === 'def_moldy')?.score || 0,
-        sample.attributes.find(a => a.id === 'defects')?.subAttributes?.find(s => s.id === 'def_meaty')?.score || 0,
-        sample.attributes.find(a => a.id === 'defects')?.subAttributes?.find(s => s.id === 'def_over')?.score || 0,
-        sample.attributes.find(a => a.id === 'defects')?.subAttributes?.find(s => s.id === 'def_manure')?.score || 0,
-        sample.attributes.find(a => a.id === 'defects')?.subAttributes?.find(s => s.id === 'def_smoke')?.score || 0,
-        sample.attributes.find(a => a.id === 'defects')?.subAttributes?.find(s => s.id === 'def_other')?.score || 0,
-        `"${(sample.attributes.find(a => a.id === 'defects')?.subAttributes?.find(s => s.id === 'def_other')?.description || '').replace(/"/g, '""')}"`,
+        getScore('defects'),
+        getScore('defects', 'def_dirty'),
+        getScore('defects', 'def_mold'),
+        getScore('defects', 'def_moldy'),
+        getScore('defects', 'def_meaty'),
+        getScore('defects', 'def_over'),
+        getScore('defects', 'def_manure'),
+        getScore('defects', 'def_smoke'),
+        getScore('defects', 'def_other'),
+        `"${getDescription('defects', 'def_other').replace(/"/g, '""')}"`,
 
         `"${sample.notes.replace(/"/g, '""')}"`,
         `"${sample.producerRecommendations.replace(/"/g, '""')}"`,
@@ -99,27 +122,7 @@ export const generateCSVRow = (sample: StoredSample, language: 'en' | 'es'): (st
     ];
 };
 
-export const generateShimmedSample = (session: any, language: 'en' | 'es'): StoredSample => {
-    // Helper to convert session to StoredSample-like object for export
-    return {
-        sampleCode: session.metadata.sampleCode,
-        date: session.metadata.date,
-        time: session.metadata.time,
-        evaluator: session.metadata.evaluator,
-        evaluationType: session.metadata.evaluationType,
-        sampleInfo: session.metadata.sampleInfo,
-        notes: session.metadata.notes,
-        producerRecommendations: session.metadata.producerRecommendations,
-        attributes: session.attributes,
-        globalQuality: session.globalQuality,
-        selectedQualityId: session.selectedQualityId,
-        language: language,
-        // Dumb values for rest
-        id: 'temp',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    };
-};
+
 
 export const parseSamplesFromCSV = (data: any[], language: 'en' | 'es'): Omit<StoredSample, 'id' | 'createdAt' | 'updatedAt'>[] => {
     // attributes and constants should be imported at top level
@@ -141,6 +144,9 @@ export const parseSamplesFromCSV = (data: any[], language: 'en' | 'es'): Omit<St
         return isNaN(num) ? 0 : num;
     };
 
+    // Optimization: Pre-stringify the template to avoid repeated overhead
+    const baseAttributesStr = JSON.stringify(INITIAL_ATTRIBUTES);
+
     return data.map(row => {
         // map base fields
         // Note: evaluationType is not in CSV, defaulting to 'cacao_mass'
@@ -156,7 +162,7 @@ export const parseSamplesFromCSV = (data: any[], language: 'en' | 'es'): Omit<St
             globalQuality: getNumber(row, "Global Quality (0 - 10)", "Calidad global (0 - 10)"),
             language: language,
             selectedQualityId: undefined, // Will determine below
-            attributes: JSON.parse(JSON.stringify(INITIAL_ATTRIBUTES)) // Deep copy initial
+            attributes: JSON.parse(baseAttributesStr) // Faster cloning
         };
 
         // If date is in DD/MM/YYYY format (from Spanish export or Excel), convert to YYYY-MM-DD

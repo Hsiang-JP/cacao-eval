@@ -1,23 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { TRANSLATIONS } from '../constants';
 import { ArrowLeft } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import Footer from '../components/Footer';
 
-interface ComparePageProps {
-    language: 'en' | 'es';
-    onLanguageChange: (lang: 'en' | 'es') => void;
-}
-
-const ComparePage: React.FC<ComparePageProps> = ({ language, onLanguageChange }) => {
+const ComparePage: React.FC = () => {
+    const { language, t } = useLanguage();
     const navigate = useNavigate();
-    const t = TRANSLATIONS[language];
 
     return (
-        <div className="min-h-screen bg-cacao-50 text-gray-800 font-sans pb-20">
-            <Header language={language} onLanguageChange={onLanguageChange} />
+        <div className="flex flex-col min-h-screen bg-cacao-50 text-gray-800 font-sans">
+            <Header />
 
-            <main className="w-full px-4 md:px-8 space-y-6">
+            <main className="w-full px-4 md:px-8 space-y-6 flex-grow">
                 <div className="flex items-center gap-4 mb-4">
                     <button
                         onClick={() => navigate('/samples')}
@@ -39,6 +35,7 @@ const ComparePage: React.FC<ComparePageProps> = ({ language, onLanguageChange })
                     </p>
                 </div>
             </main>
+            <Footer />
         </div>
     );
 };

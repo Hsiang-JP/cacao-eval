@@ -6,14 +6,13 @@ interface MobileNavProps {
     attributes: FlavorAttribute[];
     language: 'en' | 'es';
     isEvaluationStarted: boolean;
-    isEvaluationEnded: boolean;
 }
 
-const MobileNav: React.FC<MobileNavProps> = ({ attributes, language, isEvaluationStarted, isEvaluationEnded }) => {
+const MobileNav: React.FC<MobileNavProps> = ({ attributes, language, isEvaluationStarted }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     // Only show if evaluation is active
-    if (!isEvaluationStarted || isEvaluationEnded) return null;
+    if (!isEvaluationStarted) return null;
 
     const scrollToSection = (id: string) => {
         const element = document.getElementById(id);

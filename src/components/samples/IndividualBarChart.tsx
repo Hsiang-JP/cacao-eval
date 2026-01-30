@@ -21,14 +21,16 @@ ChartJS.register(
     Legend
 );
 
+import { useLanguage } from '../../context/LanguageContext';
+
 interface IndividualBarChartProps {
     sample: StoredSample;
-    language: 'en' | 'es';
     orientation?: 'horizontal' | 'vertical';
     height?: number;
 }
 
-const IndividualBarChart: React.FC<IndividualBarChartProps> = ({ sample, language, orientation = 'horizontal', height }) => {
+const IndividualBarChart: React.FC<IndividualBarChartProps> = ({ sample, orientation = 'horizontal', height }) => {
+    const { language } = useLanguage();
     // Attributes to display (excluding calculated parents if desired, or showing all)
     // For bar chart, usually showing the main categories + specific defects is good.
     // The user requested showing ALL 15 attributes.

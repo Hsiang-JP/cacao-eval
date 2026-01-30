@@ -1,31 +1,37 @@
 import React, { useState } from 'react';
 import { StoredSample } from '../../services/dbService';
 import { Calendar, User, ChevronDown, ChevronUp, CheckSquare, Square, Trash2 } from 'lucide-react';
-import IndividualBarChart from '../comparison/IndividualBarChart';
+import IndividualBarChart from './IndividualBarChart';
 import { getAttributeColor } from '../../utils/colors';
+
+import { useLanguage } from '../../context/LanguageContext';
 
 interface SampleLibraryCardProps {
     sample: StoredSample;
-    language: 'en' | 'es';
     isSelected: boolean;
     onToggleSelect: (id: string) => void;
-    onDelete?: (id: string, code: string) => void; // Optional if we move delete elsewhere
-    t: any; // Translations
+    onDelete?: (id: string, code: string) => void;
 }
 
 const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
     sample,
-    language,
     isSelected,
     onToggleSelect,
-    onDelete,
-    t
+    onDelete
 }) => {
+    const { language, t } = useLanguage();
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Format date nicely
     const formatDate = (dateStr: string) => {
-        // Basic formatting, could be improved with locale
+        if (!dateStr) return '';
+        // If YYYY-MM-DD, convert to DD/MM/YYYY
+        if (dateStr.includes('-')) {
+            const [y, m, d] = dateStr.split('-');
+            if (y.length === 4) {
+                return `${d}/${m}/${y}`;
+            }
+        }
         return dateStr;
     };
 
@@ -93,7 +99,6 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
             <div className="mb-2 border border-pink-200 rounded-lg p-2 bg-white" style={{ minHeight: '150px' }}>
                 <IndividualBarChart
                     sample={sample}
-                    language={language}
                     orientation="vertical"
                     height={150}
                 />

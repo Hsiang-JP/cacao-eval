@@ -13,12 +13,14 @@ import { FlavorAttribute } from '../types';
 // Register Chart.js components
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
+import { useLanguage } from '../context/LanguageContext';
+
 interface FlavorRadarProps {
   attributes: FlavorAttribute[];
-  language: 'en' | 'es';
 }
 
-const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes, language }, ref) => {
+const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes }, ref) => {
+  const { language } = useLanguage();
   // Order logic matches standard CoEx flow
   const order = useMemo(() => [
     'cacao',

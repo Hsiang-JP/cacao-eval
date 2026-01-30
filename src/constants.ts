@@ -50,6 +50,8 @@ export const TRANSLATIONS = {
     clone: 'Clone',
     noSamples: 'No samples found',
     actions: 'Actions',
+    sampleLibrary: 'Sample Library',
+    evaluation: 'Evaluation',
     viewAndEdit: 'View & Edit'
   },
   es: {
@@ -100,6 +102,8 @@ export const TRANSLATIONS = {
     clone: 'Clonar',
     noSamples: 'No se encontraron muestras',
     actions: 'Acciones',
+    sampleLibrary: 'Biblioteca de Muestras',
+    evaluation: 'Evaluación',
     viewAndEdit: 'Ver y Editar'
   }
 };

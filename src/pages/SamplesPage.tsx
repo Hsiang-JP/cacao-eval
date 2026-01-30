@@ -8,15 +8,12 @@ import { Plus, Search, Trash2, Calendar, User, FileText, CheckSquare, Square, Ba
 import SampleLibraryCard from '../components/samples/SampleLibraryCard';
 import Papa from 'papaparse';
 import { CSV_HEADERS_EN, CSV_HEADERS_ES } from '../constants';
+import { useLanguage } from '../context/LanguageContext';
+import Footer from '../components/Footer';
 
-interface SamplesPageProps {
-    language: 'en' | 'es';
-    onLanguageChange: (lang: 'en' | 'es') => void;
-}
-
-const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange }) => {
+const SamplesPage: React.FC = () => {
+    const { language, t } = useLanguage();
     const navigate = useNavigate();
-    const t = TRANSLATIONS[language];
     const [samples, setSamples] = useState<StoredSample[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -167,15 +164,28 @@ const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange })
                     // Initial parse (these have NO IDs yet)
                     const importedSamples = parseSamplesFromCSV(results.data, language);
 
-                    if (importedSamples.length > 0) {
-                        // Check for duplicates (Code + Date + Time)
+                    // 1. FILTERING: We do NOT filter out 0 values as per user request. 
+                    // We only ensure the sample has the minimum identification data to be valid.
+                    const validImportedSamples = importedSamples.filter(s => s.sampleCode && s.date && s.evaluator);
+
+                    const skippedCount = importedSamples.length - validImportedSamples.length;
+
+                    if (skippedCount > 0) {
+                        alert(language === 'es'
+                            ? `Se omitieron ${skippedCount} entradas por faltar datos de identificación (Código, Fecha o Evaluador).`
+                            : `Skipped ${skippedCount} entries due to missing identification data (Code, Date, or Evaluator).`
+                        );
+                    }
+
+                    if (validImportedSamples.length > 0) {
+                        // 2. DUPLICATE CHECK: Code + Evaluator + Date
                         const duplicates: { importIdx: number; existingId: string; code: string; createdAt: number }[] = [];
 
-                        importedSamples.forEach((imp, idx) => {
+                        validImportedSamples.forEach((imp, idx) => {
                             const match = samples.find(s =>
                                 s.sampleCode.toLowerCase() === imp.sampleCode.toLowerCase() &&
-                                s.date === imp.date &&
-                                s.time === imp.time
+                                s.evaluator.toLowerCase() === imp.evaluator.toLowerCase() &&
+                                s.date === imp.date
                             );
                             if (match) {
                                 duplicates.push({
@@ -188,15 +198,15 @@ const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange })
                         });
 
 
-                        const samplesToImport: any[] = [...importedSamples];
+                        const samplesToImport: any[] = [...validImportedSamples];
 
                         if (duplicates.length > 0) {
                             const confirmMsg = language === 'es'
-                                ? `Se encontraron ${duplicates.length} muestras duplicadas (mismo Código, Fecha y Hora). \n\nSi continúa, estas muestras se ACTUALIZARÁN con los datos del archivo, preservando su identidad.\n\n¿Desea actualizar estas muestras?`
-                                : `Found ${duplicates.length} duplicate samples (same Code, Date, and Time). \n\nProceeding will UPDATE these samples with the data from the file, preserving their identity.\n\nDo you want to update these samples?`;
+                                ? `Se encontraron ${duplicates.length} muestras duplicadas (mismo Código, Evaluador y Fecha). \n\nSi continúa, estas muestras serán REEMPLAZADAS con los datos del CSV.\n\n¿Desea continuar?`
+                                : `Found ${duplicates.length} duplicate samples (same Code, Evaluator, and Date). \n\nProceeding will REPLACE these samples with the data from the CSV.\n\nDo you want to proceed?`;
 
                             if (!window.confirm(confirmMsg)) {
-                                return; // Abort
+                                return; // Abort whole import
                             }
 
                             // Assign existing IDs to the imported objects to trigger UPDATE (Upsert)
@@ -209,14 +219,13 @@ const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange })
                             });
                         }
 
-                        // We no longer delete. We just Upsert.
-                        // importSamples now uses .put() so if ID exists, it updates. If not, it creates.
+                        // Upsert
                         await dbService.importSamples(samplesToImport);
 
                         await loadSamples(); // Refresh list
                         alert(language === 'es'
-                            ? `Proceso finalizado: ${duplicates.length} actualizadas, ${importedSamples.length - duplicates.length} nuevas.`
-                            : `Process complete: ${duplicates.length} updated, ${importedSamples.length - duplicates.length} new samples imported.`);
+                            ? `Proceso finalizado: ${duplicates.length} reemplazadas, ${validImportedSamples.length - duplicates.length} nuevas.`
+                            : `Process complete: ${duplicates.length} replaced, ${validImportedSamples.length - duplicates.length} new samples imported.`);
                     } else {
                         alert(language === 'es' ? 'No se encontraron muestras válidas en el archivo CSV.' : 'No valid samples found in CSV.');
                     }
@@ -231,10 +240,10 @@ const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange })
     };
 
     return (
-        <div className="min-h-screen bg-cacao-50 text-gray-800 font-sans pb-20">
-            <Header language={language} onLanguageChange={onLanguageChange} />
+        <div className="flex flex-col min-h-screen bg-cacao-50 text-gray-800 font-sans">
+            <Header />
 
-            <main className="w-full px-4 md:px-8 space-y-6">
+            <main className="w-full px-4 md:px-8 space-y-6 mb-8 flex-grow">
 
                 {/* Actions Bar */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-cacao-100">
@@ -320,16 +329,15 @@ const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange })
                             <SampleLibraryCard
                                 key={sample.id}
                                 sample={sample}
-                                language={language}
                                 isSelected={selectedIds.has(sample.id)}
                                 onToggleSelect={toggleSelection}
                                 onDelete={handleDelete}
-                                t={t}
                             />
                         ))}
                     </div>
                 )}
             </main>
+            <Footer />
         </div>
     );
 };

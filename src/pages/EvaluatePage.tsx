@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import ScoreSlider from '../components/ScoreSlider';
 import FlavorRadar from '../components/FlavorRadar';
 import MobileNav from '../components/MobileNav';
+import Footer from '../components/Footer';
 import { GradingSession, SampleMetadata, QualityAttribute, SubAttribute } from '../types';
 import {
   INITIAL_ATTRIBUTES,
@@ -12,27 +13,24 @@ import {
   TRANSLATIONS,
 
 } from '../constants';
-import { RefreshCw, CheckCircle, Play, FileText, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { RefreshCw, CheckCircle, Play, FileText, ChevronDown, ChevronUp, Save, Plus } from 'lucide-react';
 import { dbService, StoredSample } from '../services/dbService';
 import { getAttributeColor } from '../utils/colors';
 import { getCurrentISODate, getCurrentTime } from '../utils/dateUtils';
 // ChartJS registration is handled in FlavorRadar.tsx
 
-interface EvaluatePageProps {
-  language: 'en' | 'es';
-  onLanguageChange: (lang: 'en' | 'es') => void;
-}
+import { useLanguage } from '../context/LanguageContext';
 
-const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange }) => {
+const EvaluatePage: React.FC = () => {
+  const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sampleId = searchParams.get('id');
 
   // const [language, setLanguage] = useState<'en' | 'es'>('en'); // Lifted to App
-  const t = TRANSLATIONS[language];
   const [isEvaluationStarted, setIsEvaluationStarted] = useState(false);
-  const [isEvaluationEnded, setIsEvaluationEnded] = useState(false);
   const [isGlobalQualityExpanded, setIsGlobalQualityExpanded] = useState(true);
+  const [showPostSaveModal, setShowPostSaveModal] = useState(false);
 
   // Reference for the Radar Chart to export image for PDF
   const chartRef = useRef<any>(null);
@@ -86,20 +84,7 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
             selectedQualityId: storedSample.selectedQualityId,
             language: language
           });
-          // Set state to allow viewing/editing
           setIsEvaluationStarted(true);
-          // We assume saved samples are "in progress" or "ended". 
-          // For now, let's treat them as accessible. 
-          // If we want to lock them, we could set isEvaluationEnded(true).
-          // But "View & Edit" implies we might want to change them.
-          // Let's set Ended -> true so it looks "Complete" but user can still hit "Save" again to update?
-          // Actually, if Ended is true, inputs might be disabled in the UI. 
-          // Let's check the UI code... 
-          // Yes, disabled={!isEvaluationStarted || isEvaluationEnded}
-          // So if we want to Edit, we should NOT set isEvaluationEnded(true).
-          // But if we want to just View, we might want it disabled.
-          // Let's default to Editable for now (Started=true, Ended=false).
-          setIsEvaluationEnded(true); // Locked by default
         }
       };
       loadSample();
@@ -245,32 +230,79 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
   /* New Save Function with Duplicate Check */
   const handleSaveToLibrary = async () => {
     try {
-      // 1. Check for duplicates (by Sample Code)
+      // 0. STRICT CHECK: Code, Date, Evaluator (Must be present)
       const code = session.metadata.sampleCode.trim();
-      if (!code) {
-        alert(t.noSamples || "Please enter a sample code.");
+      const evaluatorName = session.metadata.evaluator.trim();
+      const date = session.metadata.date;
+
+      if (!code || !evaluatorName || !date) {
+        const missing = [];
+        if (!code) missing.push(language === 'es' ? 'Código de Muestra' : 'Sample Code');
+        if (!evaluatorName) missing.push(language === 'es' ? 'Evaluador' : 'Evaluator');
+        if (!date) missing.push(language === 'es' ? 'Fecha' : 'Date');
+
+        alert(language === 'es'
+          ? `Por favor complete los siguientes campos obligatorios antes de guardar:\n- ${missing.join('\n- ')}`
+          : `Please complete the following required fields before saving:\n- ${missing.join('\n- ')}`
+        );
         return;
       }
 
+      // 1. CHECK REQUIRED SCORES (Warn only)
+      const requiredAttributes = ['cacao', 'bitterness', 'astringency', 'roast', 'acidity'];
+      const missingFields = requiredAttributes.filter(id => {
+        const attr = session.attributes.find(a => a.id === id);
+        return !attr || attr.score <= 0;
+      });
+
+      if (missingFields.length > 0) {
+        const missingNames = missingFields.map(id => {
+          const attr = session.attributes.find(a => a.id === id);
+          return language === 'es' ? attr?.nameEs : attr?.nameEn;
+        }).join(', ');
+
+        const confirmSave = window.confirm(language === 'es'
+          ? `Los siguientes campos principales tienen valor 0 (Ausente): ${missingNames}.\n\n¿Desea guardar de todos modos?`
+          : `The following core attributes are set to 0 (Absent): ${missingNames}.\n\nDo you want to save anyway?`
+        );
+        if (!confirmSave) return;
+      }
+
+      if (session.globalQuality <= 0) {
+        const confirmGlobal = window.confirm(language === 'es'
+          ? 'La Calidad Global es 0. ¿Desea guardar de todos modos?'
+          : 'Global Quality score is 0. Do you want to save anyway?'
+        );
+        if (!confirmGlobal) return;
+      }
+
+      // 2. Check for duplicates (by Sample Code AND Evaluator AND Date)
+      // (Variables code, evaluatorName, date already declared above)
+
       // Look for existing sample with THIS code
       const existingSamples = await dbService.searchBySampleCode(code);
-      // searchBySampleCode is partial match, find exact
-      const collision = existingSamples.find(s => s.sampleCode.toLowerCase() === code.toLowerCase());
+
+      // Check for collision: matches Code AND Evaluator AND Date
+      const collision = existingSamples.find(s =>
+        s.sampleCode.toLowerCase() === code.toLowerCase() &&
+        s.evaluator.toLowerCase() === evaluatorName.toLowerCase() &&
+        s.date === date
+      );
 
       let finalId = sampleId; // Default to current editing ID (if any)
 
       if (collision) {
-        // If we found a sample with this code...
+        // If we found a sample with this code AND evaluator...
         if (sampleId && collision.id === sampleId) {
           // It's the same record we are editing. Just update.
           finalId = sampleId;
         } else {
           // It's a DIFFERENT record (collision!)
-          // Or we are creating a NEW record but reused an existing code.
+          // Prompt user that this Code+Evaluator+Date combo exists
           const confirmOverwrite = window.confirm(
             language === 'es'
-              ? `El código de muestra "${code}" ya existe. ¿Desea sobrescribirlo?`
-              : `Sample code "${code}" already exists in the library. Do you want to overwrite it?`
+              ? `Ya existe una muestra con código "${code}", evaluador "${evaluatorName}" y fecha "${date}". ¿Desea sobrescribirla?`
+              : `A sample with code "${code}", evaluator "${evaluatorName}", and date "${date}" already exists. Do you want to overwrite it?`
           );
 
           if (!confirmOverwrite) {
@@ -310,16 +342,16 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
 
       console.log('Sample saved with ID:', savedId);
 
-      // If we are NOT already editing this ID (i.e. created new or overwrote unrelated), maybe redirect or offer to view?
-      // Since we might have overwritten, let's offer to view library.
-      if (window.confirm(language === 'es' ? '¿Ver en la biblioteca?' : 'View in Library?')) {
-        navigate('/samples');
-      } else {
-        // If staying, update URL to reflect the new ID so subsequent saves just update
-        if (savedId !== sampleId) {
-          navigate(`/evaluate?id=${savedId}`, { replace: true });
-        }
+      console.log('Sample saved with ID:', savedId);
+
+      // If staying, update URL to reflect the new ID so subsequent saves just update
+      if (savedId !== sampleId) {
+        navigate(`/evaluate?id=${savedId}`, { replace: true });
       }
+
+      // Show the post-save choices modal
+      setShowPostSaveModal(true);
+
     } catch (error) {
       console.error('Failed to save sample:', error);
       alert(language === 'es'
@@ -349,7 +381,6 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
         language
       });
       setIsEvaluationStarted(false);
-      setIsEvaluationEnded(false);
       window.scrollTo(0, 0);
     }
   };
@@ -361,13 +392,13 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
 
 
   return (
-    <div className="min-h-screen bg-cacao-50 text-gray-800 font-sans pb-20">
-      <Header language={language} onLanguageChange={onLanguageChange} />
+    <div className="flex flex-col min-h-screen bg-cacao-50 text-gray-800 font-sans">
+      <Header />
 
-      <main id="main-content" className="w-full px-4 md:px-8 space-y-8">
+      <main id="main-content" className="w-full px-4 md:px-8 space-y-8 mb-8 flex-grow">
 
         {/* Top Section: Metadata */}
-        <section className={`bg-white p-6 rounded-xl shadow-sm border border-cacao-100 transition-opacity ${isEvaluationEnded ? 'opacity-80 pointer-events-none' : ''}`}>
+        <section className={`bg-white p-6 rounded-xl shadow-sm border border-cacao-100 transition-opacity`}>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.evaluator}</label>
@@ -375,7 +406,6 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                 type="text"
                 value={session.metadata.evaluator}
                 onChange={(e) => handleMetadataChange('evaluator', e.target.value)}
-                disabled={isEvaluationEnded}
                 className="w-full p-2 bg-gray-50 border rounded-md disabled:bg-gray-100"
               />
             </div>
@@ -388,7 +418,6 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                     required
                     value={session.metadata.date}
                     onChange={(e) => handleMetadataChange('date', e.target.value)}
-                    disabled={isEvaluationEnded}
                     className={`w-full p-2 bg-gray-50 border rounded-md disabled:bg-gray-100 ${language === 'es' && session.metadata.date ? 'text-transparent' : ''}`}
                   />
                   {language === 'es' && session.metadata.date && (
@@ -404,7 +433,6 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                   type="time"
                   value={session.metadata.time}
                   onChange={(e) => handleMetadataChange('time', e.target.value)}
-                  disabled={isEvaluationEnded}
                   className="w-32 p-2 bg-gray-50 border rounded-md disabled:bg-gray-100"
                 />
               </div>
@@ -415,7 +443,6 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                 type="text"
                 value={session.metadata.sampleCode}
                 onChange={(e) => handleMetadataChange('sampleCode', e.target.value)}
-                disabled={isEvaluationEnded}
                 className="w-full p-2 bg-gray-50 border rounded-md font-mono disabled:bg-gray-100"
               />
             </div>
@@ -424,7 +451,6 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
               <select
                 value={session.metadata.evaluationType}
                 onChange={(e) => handleMetadataChange('evaluationType', e.target.value)}
-                disabled={isEvaluationEnded}
                 className="w-full p-2 bg-gray-50 border rounded-md disabled:bg-gray-100"
               >
                 <option value="cacao_mass">{t.cacaoMass}</option>
@@ -439,7 +465,6 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                 type="text"
                 value={session.metadata.sampleInfo}
                 onChange={(e) => handleMetadataChange('sampleInfo', e.target.value)}
-                disabled={isEvaluationEnded}
                 className="w-full p-2 bg-gray-50 border rounded-md disabled:bg-gray-100"
               />
             </div>
@@ -447,7 +472,7 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
         </section>
 
         {/* Start Evaluation Button */}
-        {!isEvaluationStarted && !isEvaluationEnded && (
+        {!isEvaluationStarted && (
           <div className="flex justify-center">
             <button
               type="button"
@@ -461,7 +486,7 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
         )}
 
         {/* Main Content: 3-Column Layout */}
-        <div className={`grid grid-cols-1 lg:grid-cols-3 gap-8 transition-opacity ${!isEvaluationStarted && !isEvaluationEnded ? 'opacity-50' : 'opacity-100'}`}>
+        <div className={`grid grid-cols-1 lg:grid-cols-3 gap-8 transition-opacity ${!isEvaluationStarted ? 'opacity-50' : 'opacity-100'}`}>
 
           {/* LEFT COLUMN (2/3 width): All Attributes */}
           <div className="lg:col-span-2 space-y-8">
@@ -487,7 +512,7 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                     language={language}
                     customColor={getAttributeColor(attr.id)}
                     isCalculated={attr.isCalculated}
-                    disabled={!isEvaluationStarted || isEvaluationEnded}
+                    disabled={!isEvaluationStarted}
                     defaultExpanded={isPrimary}
                   />
                 );
@@ -500,11 +525,11 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
             <div className="lg:sticky lg:top-24 space-y-6">
 
               {/* Global Quality */}
-              <div className={`bg-white rounded-xl shadow-sm border border-cacao-100 transition-all overflow-hidden ${(!isEvaluationStarted || isEvaluationEnded) ? 'opacity-80 pointer-events-none' : ''}`}>
+              <div className={`bg-white rounded-xl shadow-sm border border-cacao-100 transition-all overflow-hidden ${(!isEvaluationStarted) ? 'opacity-80 pointer-events-none' : ''}`}>
                 {/* Accordion Header */}
                 <button
                   onClick={() => setIsGlobalQualityExpanded(!isGlobalQualityExpanded)}
-                  disabled={!isEvaluationStarted || isEvaluationEnded}
+                  disabled={!isEvaluationStarted}
                   aria-expanded={isGlobalQualityExpanded}
                   aria-controls="global-quality-content"
                   className="w-full p-4 flex justify-between items-center hover:bg-cacao-50 transition-colors active:bg-cacao-100 touch-manipulation min-h-[44px]"
@@ -539,8 +564,8 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                           type="range" min="0" max="10" step="0.5"
                           value={session.globalQuality}
                           onChange={(e) => setSession(prev => ({ ...prev, globalQuality: parseFloat(e.target.value) }))}
-                          disabled={!isEvaluationStarted || isEvaluationEnded}
-                          className={`w-full h-8 md:h-4 bg-gray-200 rounded-lg appearance-none accent-cacao-800 ${(!isEvaluationStarted || isEvaluationEnded) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                          disabled={!isEvaluationStarted}
+                          className={`w-full h-8 md:h-4 bg-gray-200 rounded-lg appearance-none accent-cacao-800 ${(!isEvaluationStarted) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                         />
                       </div>
                     </div>
@@ -551,7 +576,7 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                       <select
                         value={session.selectedQualityId || ''}
                         onChange={(e) => handleQualitySelect(e.target.value)}
-                        disabled={!isEvaluationStarted || isEvaluationEnded}
+                        disabled={!isEvaluationStarted}
                         className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-cacao-500 focus:ring-1 focus:ring-cacao-500 disabled:bg-gray-100 outline-none transition-all"
                       >
                         <option value="">{language === 'es' ? "Seleccionar..." : "Select..."}</option>
@@ -567,14 +592,14 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
               </div>
 
               {/* Notes & Feedback */}
-              <div className={`bg-white p-6 rounded-xl shadow-sm border border-cacao-100 space-y-4 transition-opacity ${(!isEvaluationStarted || isEvaluationEnded) ? 'opacity-80 pointer-events-none' : ''}`}>
+              <div className={`bg-white p-6 rounded-xl shadow-sm border border-cacao-100 space-y-4 transition-opacity ${(!isEvaluationStarted) ? 'opacity-80 pointer-events-none' : ''}`}>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.flavorNotes}</label>
                   <textarea
                     className="w-full p-3 bg-gray-50 border rounded-lg h-24 text-sm disabled:bg-gray-100"
                     value={session.metadata.notes}
                     onChange={(e) => handleMetadataChange('notes', e.target.value)}
-                    disabled={!isEvaluationStarted || isEvaluationEnded}
+                    disabled={!isEvaluationStarted}
                   />
                 </div>
                 <div>
@@ -583,38 +608,21 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                     className="w-full p-3 bg-gray-50 border rounded-lg h-24 text-sm disabled:bg-gray-100"
                     value={session.metadata.producerRecommendations}
                     onChange={(e) => handleMetadataChange('producerRecommendations', e.target.value)}
-                    disabled={!isEvaluationStarted || isEvaluationEnded}
+                    disabled={!isEvaluationStarted}
                   />
                 </div>
               </div>
 
               {/* Radar Chart */}
-              <FlavorRadar ref={chartRef} attributes={session.attributes} language={language} />
+              <FlavorRadar ref={chartRef} attributes={session.attributes} />
 
-              {/* Bar Chart (Results View) */}
-              {/* End Evaluation & Actions */}
+              {/* End Evaluation & Actions - End Button Removed */}
               <div className="space-y-4">
-                <button
-                  type="button"
-                  onClick={() => setIsEvaluationEnded(!isEvaluationEnded)}
-                  disabled={!isEvaluationStarted}
-                  className={`w-full font-bold py-4 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 text-lg uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed ${isEvaluationEnded
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-red-600 hover:bg-red-700 text-white'
-                    }`}
-                >
-                  <CheckCircle size={24} />
-                  {isEvaluationEnded
-                    ? (language === 'es' ? 'Editar Evaluación' : 'Edit Evaluation')
-                    : t.endEvaluation
-                  }
-                </button>
-
                 <div className="space-y-3 pt-2">
                   <button
                     type="button"
                     onClick={handleSaveToLibrary}
-                    disabled={!isEvaluationEnded}
+                    disabled={!isEvaluationStarted}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 border border-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Save size={20} />
@@ -645,11 +653,66 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
 
       </main>
 
+      {/* Post-Save Modal */}
+      {showPostSaveModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-6 transform scale-100 animate-in zoom-in-95 duration-200">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle size={32} />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800">
+                {language === 'es' ? '¡Muestra Guardada!' : 'Sample Saved!'}
+              </h3>
+              <p className="text-gray-500">
+                {language === 'es' ? '¿Qué operación desea realizar?' : 'What would you like to do next?'}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/samples')}
+                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-3 shadow-sm"
+              >
+                <FileText size={20} className="text-cacao-600" />
+                {t.sampleLibrary}
+              </button>
+
+              <button
+                onClick={() => {
+                  setSession({
+                    metadata: getInitialMetadata(),
+                    attributes: JSON.parse(JSON.stringify(INITIAL_ATTRIBUTES)),
+                    globalQuality: 0,
+                    language
+                  });
+                  setIsEvaluationStarted(false);
+                  setShowPostSaveModal(false);
+                  window.scrollTo(0, 0);
+                  navigate('/evaluate');
+                }}
+                className="w-full bg-cacao-600 hover:bg-cacao-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-3 shadow-md"
+              >
+                <Plus size={20} />
+                {t.newEvaluation}
+              </button>
+
+              <button
+                onClick={() => setShowPostSaveModal(false)}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                {language === 'es' ? 'Seguir editando' : 'Keep editing'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Footer />
       <MobileNav
         attributes={session.attributes}
         language={language}
         isEvaluationStarted={isEvaluationStarted}
-        isEvaluationEnded={isEvaluationEnded}
       />
     </div>
   );
