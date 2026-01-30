@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Papa from 'papaparse';
+
 import Header from '../components/Header';
 import ScoreSlider from '../components/ScoreSlider';
 import FlavorRadar from '../components/FlavorRadar';
@@ -10,12 +10,12 @@ import {
   INITIAL_ATTRIBUTES,
   INITIAL_QUALITY_ATTRIBUTES,
   TRANSLATIONS,
-  CSV_HEADERS_EN,
-  CSV_HEADERS_ES
+
 } from '../constants';
-import { RefreshCw, CheckCircle, Play, Download, FileText, ChevronDown, ChevronUp, Save } from 'lucide-react';
-import IndividualBarChart from '../components/comparison/IndividualBarChart';
+import { RefreshCw, CheckCircle, Play, FileText, ChevronDown, ChevronUp, Save } from 'lucide-react';
 import { dbService, StoredSample } from '../services/dbService';
+import { getAttributeColor } from '../utils/colors';
+import { getCurrentISODate, getCurrentTime } from '../utils/dateUtils';
 // ChartJS registration is handled in FlavorRadar.tsx
 
 interface EvaluatePageProps {
@@ -135,26 +135,7 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
 
   // -- Helpers --
 
-  const getAttributeColor = (id: string) => {
-    switch (id) {
-      case 'cacao': return '#754c29';
-      case 'bitterness': return '#a01f65';
-      case 'astringency': return '#366d99';
-      case 'roast': return '#ebab21';
-      case 'acidity': return '#00954c';
-      case 'fresh_fruit': return '#f6d809';
-      case 'browned_fruit': return '#431614';
-      case 'vegetal': return '#006260';
-      case 'floral': return '#8dc63f';
-      case 'woody': return '#a97c50';
-      case 'spice': return '#c33d32';
-      case 'nutty': return '#a0a368';
-      case 'caramel': return '#bd7844';
-      case 'sweetness': return '#ffc6e0';
-      case 'defects': return '#a7a9ac';
-      default: return '#a0785a';
-    }
-  };
+
 
   // Helper to identify primary attributes (always visible with optional slider hide)
   const isPrimaryAttribute = (id: string): boolean => {
@@ -261,8 +242,46 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
     setSession(prev => ({ ...prev, selectedQualityId: id }));
   };
 
+  /* New Save Function with Duplicate Check */
   const handleSaveToLibrary = async () => {
     try {
+      // 1. Check for duplicates (by Sample Code)
+      const code = session.metadata.sampleCode.trim();
+      if (!code) {
+        alert(t.noSamples || "Please enter a sample code.");
+        return;
+      }
+
+      // Look for existing sample with THIS code
+      const existingSamples = await dbService.searchBySampleCode(code);
+      // searchBySampleCode is partial match, find exact
+      const collision = existingSamples.find(s => s.sampleCode.toLowerCase() === code.toLowerCase());
+
+      let finalId = sampleId; // Default to current editing ID (if any)
+
+      if (collision) {
+        // If we found a sample with this code...
+        if (sampleId && collision.id === sampleId) {
+          // It's the same record we are editing. Just update.
+          finalId = sampleId;
+        } else {
+          // It's a DIFFERENT record (collision!)
+          // Or we are creating a NEW record but reused an existing code.
+          const confirmOverwrite = window.confirm(
+            language === 'es'
+              ? `El código de muestra "${code}" ya existe. ¿Desea sobrescribirlo?`
+              : `Sample code "${code}" already exists in the library. Do you want to overwrite it?`
+          );
+
+          if (!confirmOverwrite) {
+            return; // User cancelled
+          }
+
+          // User said overwrite -> Use the EXISTING ID to replace it
+          finalId = collision.id;
+        }
+      }
+
       // Prepare sample data for storage
       const sampleData: Omit<StoredSample, 'id' | 'createdAt' | 'updatedAt'> = {
         sampleCode: session.metadata.sampleCode,
@@ -279,7 +298,9 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
         language: language,
       };
 
-      const sampleId = await dbService.saveSample(sampleData);
+      // Save (create or update based on finalId)
+      // If finalId is undefined (new unique sample), saveSample generates new UUID.
+      const savedId = await dbService.saveSample(sampleData, finalId || undefined);
 
       // Show success toast
       alert(language === 'es'
@@ -287,11 +308,17 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
         : `✅ Sample ${session.metadata.sampleCode} saved successfully!`
       );
 
-      console.log('Sample saved with ID:', sampleId);
+      console.log('Sample saved with ID:', savedId);
 
-      // Offer to view in library
+      // If we are NOT already editing this ID (i.e. created new or overwrote unrelated), maybe redirect or offer to view?
+      // Since we might have overwritten, let's offer to view library.
       if (window.confirm(language === 'es' ? '¿Ver en la biblioteca?' : 'View in Library?')) {
         navigate('/samples');
+      } else {
+        // If staying, update URL to reflect the new ID so subsequent saves just update
+        if (savedId !== sampleId) {
+          navigate(`/evaluate?id=${savedId}`, { replace: true });
+        }
       }
     } catch (error) {
       console.error('Failed to save sample:', error);
@@ -303,9 +330,8 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
   };
 
   const handleStartEvaluation = () => {
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    const dateStr = getCurrentISODate();
+    const timeStr = getCurrentTime();
 
     setSession(prev => ({
       ...prev,
@@ -328,44 +354,11 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
     }
   };
 
-  const handleEndEvaluation = () => {
-    setIsEvaluationEnded(true);
-  };
+
 
   /* Removed static import of pdfService and ChartJS */
 
-  const handleDownloadPdf = async () => {
-    const { generatePdf } = await import('../services/pdfService');
-    const { generateShimmedSample, generateCSVRow } = await import('../services/csvService');
-    // Capture chart image from the ref
-    const chartImage = chartRef.current?.toBase64Image();
-    generatePdf(session, chartImage);
-  };
 
-  const handleDownloadCsv = async () => {
-    const { generateShimmedSample, generateCSVRow } = await import('../services/csvService');
-    const headers = language === 'es' ? CSV_HEADERS_ES : CSV_HEADERS_EN;
-
-    const shimmedSample = generateShimmedSample(session, language);
-    const row = generateCSVRow(shimmedSample, language);
-
-    // Use Papa.unparse to handle quoting and newlines correctly
-    const csv = Papa.unparse({
-      fields: headers,
-      data: [row]
-    }, {
-      quotes: true // Force quotes on all fields to preserve strings like "002"
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `CoEx_${session.metadata.sampleCode || 'Sample'}_${session.metadata.date}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   return (
     <div className="min-h-screen bg-cacao-50 text-gray-800 font-sans pb-20">
@@ -599,42 +592,23 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
               <FlavorRadar ref={chartRef} attributes={session.attributes} language={language} />
 
               {/* Bar Chart (Results View) */}
-              {isEvaluationEnded && (
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-cacao-100">
-                  <h4 className="text-sm font-bold text-gray-700 uppercase mb-4 text-center">{language === 'es' ? 'Perfil de Sabor (Detallado)' : 'Flavor Profile (Detailed)'}</h4>
-                  <IndividualBarChart
-                    sample={{
-                      ...session.metadata,
-                      id: 'current',
-                      timestamp: Date.now(),
-                      lastModified: Date.now(),
-                      attributes: session.attributes,
-                      globalQuality: session.globalQuality,
-                      selectedQualityId: session.selectedQualityId
-                    } as any} // Cast as StoredSample-like object
-                    language={language}
-                  />
-                </div>
-              )}
-
               {/* End Evaluation & Actions */}
               <div className="space-y-4">
-                {!isEvaluationEnded ? (
-                  <button
-                    type="button"
-                    onClick={handleEndEvaluation}
-                    disabled={!isEvaluationStarted}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 text-lg uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CheckCircle size={24} />
-                    {t.endEvaluation}
-                  </button>
-                ) : (
-                  <div className="w-full bg-gray-100 text-gray-500 font-bold py-3 rounded-xl border border-gray-200 text-center uppercase tracking-wide flex justify-center items-center gap-2">
-                    <CheckCircle size={20} />
-                    {language === 'es' ? 'Evaluación Finalizada' : 'Evaluation Ended'}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setIsEvaluationEnded(!isEvaluationEnded)}
+                  disabled={!isEvaluationStarted}
+                  className={`w-full font-bold py-4 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 text-lg uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed ${isEvaluationEnded
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                >
+                  <CheckCircle size={24} />
+                  {isEvaluationEnded
+                    ? (language === 'es' ? 'Editar Evaluación' : 'Edit Evaluation')
+                    : t.endEvaluation
+                  }
+                </button>
 
                 <div className="space-y-3 pt-2">
                   <button
@@ -654,24 +628,7 @@ const EvaluatePage: React.FC<EvaluatePageProps> = ({ language, onLanguageChange 
                     <FileText size={20} />
                     {language === 'es' ? 'Ver Biblioteca' : 'View Library'}
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleDownloadCsv}
-                    className="w-full bg-cacao-700 hover:bg-cacao-600 text-white font-bold py-3 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 border border-cacao-600"
-                  >
-                    <Download size={20} />
-                    {t.downloadCsv}
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={handleDownloadPdf}
-                    disabled={!isEvaluationEnded}
-                    className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 border border-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <FileText size={20} />
-                    {t.downloadPdf}
-                  </button>
                 </div>
 
                 <button

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dbService, StoredSample } from '../services/dbService';
+import { getDateStringForFilename } from '../utils/dateUtils';
 import Header from '../components/Header';
 import { TRANSLATIONS } from '../constants';
 import { Plus, Search, Trash2, Calendar, User, FileText, CheckSquare, Square, BarChart2, Download, Upload } from 'lucide-react';
@@ -79,12 +80,20 @@ const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange })
         navigate(`/compare?ids=${ids}`);
     };
 
+
     const handleExport = async () => {
         const samplesToExport = selectedIds.size > 0
             ? samples.filter(s => selectedIds.has(s.id))
             : samples; // Export all if none selected
 
         if (samplesToExport.length === 0) return;
+
+        // Prompt for filename
+        const defaultName = `cacao_eval_${getDateStringForFilename()}`;
+        const userInput = window.prompt(language === 'es' ? 'Nombre del archivo CSV:' : 'Enter filename for CSV:', defaultName);
+
+        if (userInput === null) return; // Cancelled
+        const filename = (userInput || defaultName).endsWith('.csv') ? (userInput || defaultName) : `${userInput || defaultName}.csv`;
 
         const { generateCSVRow } = await import('../services/csvService');
         const headers = language === 'es' ? CSV_HEADERS_ES : CSV_HEADERS_EN;
@@ -96,10 +105,49 @@ const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange })
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `coex_bulk_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute("download", filename);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleBulkPdf = async () => {
+        if (selectedIds.size === 0) return;
+
+        const samplesToExport = samples.filter(s => selectedIds.has(s.id));
+
+        // Prompt for filename
+        const defaultName = `cacao_eval_${getDateStringForFilename()}`;
+        const userInput = window.prompt(language === 'es' ? 'Nombre del archivo PDF:' : 'Enter filename for PDF:', defaultName);
+
+        if (userInput === null) return; // Cancelled
+        const filename = (userInput || defaultName); // Extension handled by pdfService if missing
+
+        try {
+            const { generatePdf } = await import('../services/pdfService');
+            // Map StoredSample to GradingSession structure
+            const sessions = samplesToExport.map(s => ({
+                metadata: {
+                    sampleCode: s.sampleCode,
+                    date: s.date,
+                    time: s.time,
+                    evaluator: s.evaluator,
+                    evaluationType: s.evaluationType,
+                    sampleInfo: s.sampleInfo,
+                    notes: s.notes,
+                    producerRecommendations: s.producerRecommendations
+                },
+                attributes: s.attributes,
+                globalQuality: s.globalQuality,
+                selectedQualityId: s.selectedQualityId,
+                language: language
+            }));
+
+            await generatePdf(sessions, undefined, filename);
+        } catch (error) {
+            console.error("PDF Export failed", error);
+            alert(language === 'es' ? 'Error al generar PDF' : 'Failed to generate PDF');
+        }
     };
 
     const handleImportClick = () => {
@@ -116,12 +164,59 @@ const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange })
             complete: async (results) => {
                 try {
                     const { parseSamplesFromCSV } = await import('../services/csvService');
+                    // Initial parse (these have NO IDs yet)
                     const importedSamples = parseSamplesFromCSV(results.data, language);
 
                     if (importedSamples.length > 0) {
-                        await dbService.importSamples(importedSamples);
+                        // Check for duplicates (Code + Date + Time)
+                        const duplicates: { importIdx: number; existingId: string; code: string; createdAt: number }[] = [];
+
+                        importedSamples.forEach((imp, idx) => {
+                            const match = samples.find(s =>
+                                s.sampleCode.toLowerCase() === imp.sampleCode.toLowerCase() &&
+                                s.date === imp.date &&
+                                s.time === imp.time
+                            );
+                            if (match) {
+                                duplicates.push({
+                                    importIdx: idx,
+                                    existingId: match.id,
+                                    code: imp.sampleCode,
+                                    createdAt: match.createdAt
+                                });
+                            }
+                        });
+
+
+                        const samplesToImport: any[] = [...importedSamples];
+
+                        if (duplicates.length > 0) {
+                            const confirmMsg = language === 'es'
+                                ? `Se encontraron ${duplicates.length} muestras duplicadas (mismo Código, Fecha y Hora). \n\nSi continúa, estas muestras se ACTUALIZARÁN con los datos del archivo, preservando su identidad.\n\n¿Desea actualizar estas muestras?`
+                                : `Found ${duplicates.length} duplicate samples (same Code, Date, and Time). \n\nProceeding will UPDATE these samples with the data from the file, preserving their identity.\n\nDo you want to update these samples?`;
+
+                            if (!window.confirm(confirmMsg)) {
+                                return; // Abort
+                            }
+
+                            // Assign existing IDs to the imported objects to trigger UPDATE (Upsert)
+                            duplicates.forEach(dup => {
+                                samplesToImport[dup.importIdx] = {
+                                    ...samplesToImport[dup.importIdx],
+                                    id: dup.existingId,
+                                    createdAt: dup.createdAt // Preserve original creation time
+                                };
+                            });
+                        }
+
+                        // We no longer delete. We just Upsert.
+                        // importSamples now uses .put() so if ID exists, it updates. If not, it creates.
+                        await dbService.importSamples(samplesToImport);
+
                         await loadSamples(); // Refresh list
-                        alert(language === 'es' ? `Se importaron ${importedSamples.length} muestras exitosamente.` : `Successfully imported ${importedSamples.length} samples.`);
+                        alert(language === 'es'
+                            ? `Proceso finalizado: ${duplicates.length} actualizadas, ${importedSamples.length - duplicates.length} nuevas.`
+                            : `Process complete: ${duplicates.length} updated, ${importedSamples.length - duplicates.length} new samples imported.`);
                     } else {
                         alert(language === 'es' ? 'No se encontraron muestras válidas en el archivo CSV.' : 'No valid samples found in CSV.');
                     }
@@ -178,13 +273,23 @@ const SamplesPage: React.FC<SamplesPageProps> = ({ language, onLanguageChange })
                         </button>
 
                         {selectedIds.size > 0 && (
-                            <button
-                                onClick={handleCompare}
-                                className="bg-cacao-800 hover:bg-cacao-900 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center gap-2"
-                            >
-                                <BarChart2 size={20} />
-                                {t.compare || "Compare"} ({selectedIds.size})
-                            </button>
+                            <>
+                                <button
+                                    onClick={handleBulkPdf}
+                                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center gap-2"
+                                    title={language === 'es' ? "Descargar PDF" : "Download PDF"}
+                                >
+                                    <FileText size={20} />
+                                    PDF ({selectedIds.size})
+                                </button>
+                                <button
+                                    onClick={handleCompare}
+                                    className="bg-cacao-800 hover:bg-cacao-900 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <BarChart2 size={20} />
+                                    {t.compare || "Compare"} ({selectedIds.size})
+                                </button>
+                            </>
                         )}
                         <button
                             onClick={() => navigate('/evaluate')}

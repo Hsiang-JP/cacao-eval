@@ -272,7 +272,11 @@ class CoExDB {
     /**
      * Import multiple samples (for CSV import)
      */
-    async importSamples(samples: Omit<StoredSample, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<void> {
+    /**
+     * Import multiple samples (for CSV import)
+     * Uses PUT to allow updating existing records if ID is provided
+     */
+    async importSamples(samples: Omit<StoredSample, 'id' | 'createdAt' | 'updatedAt'>[] | StoredSample[]): Promise<void> {
         const db = await this.init();
 
         return new Promise((resolve, reject) => {
@@ -283,17 +287,29 @@ class CoExDB {
             let hasError = false;
 
             samples.forEach((sample) => {
-                const id = this.generateUUID();
+                // If ID exists (it's an update), use it. Otherwise generate new.
+                const id = (sample as StoredSample).id || this.generateUUID();
                 const now = Date.now();
+
+                // If it's an update, preserve original creation time if possible, 
+                // but here we might not know it unless we fetched it. 
+                // For simplicity in this bulk import/upsert, we'll update 'updatedAt'.
+                // If we want to strictly preserve 'createdAt' for existing, we'd need to fetch or trust the input.
+                // Assuming the input 'sample' might differ.
+
+                // Robustness: If we are updating, 'sample' should technically be a partial or full StoredSample.
+                // The current signature expects Omit<..., id...>.
+                // Let's rely on the caller to provide the ID if they want to update.
 
                 const storedSample: StoredSample = {
                     ...sample,
                     id,
-                    createdAt: now,
+                    createdAt: (sample as StoredSample).createdAt || now,
                     updatedAt: now,
                 };
 
-                const request = store.add(storedSample);
+                // Use PUT instead of ADD to support upsert/update
+                const request = store.put(storedSample);
 
                 request.onsuccess = () => {
                     completed++;
@@ -318,6 +334,8 @@ class CoExDB {
      * Search samples by sample code (partial match)
      */
     async searchBySampleCode(code: string): Promise<StoredSample[]> {
+        // TODO: Optimize for large datasets - currently scans all items. 
+        // Consider keeping a separate index or using a cursor with a range if possible (though partial match is hard in IDB).
         const allSamples = await this.getAllSamples();
         const searchTerm = code.toLowerCase();
         return allSamples.filter((sample) =>
