@@ -3,10 +3,13 @@ import { Award, Bean, FileText, X, Languages, ExternalLink, ImageOff, PenTool } 
 import { TRANSLATIONS } from '../constants';
 import GuidelinesModal from './GuidelinesModal';
 import { useLanguage } from '../context/LanguageContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Header: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
   const [isGuidelinesOpen, setIsGuidelinesOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Local images from the public/ folder
   const FLAVOR_WHEEL_URL_EN = "flavor_wheel_en.png";
@@ -20,16 +23,16 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="bg-cacao-900 text-cacao-50 py-6 px-4 shadow-lg sticky top-0 z-50">
+      <header className="bg-cacao-900 text-cacao-200 py-6 px-4 shadow-lg sticky top-0 z-50">
         <div className="w-full px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
 
           {/* Left: Logo & Title */}
           <div className="flex items-center gap-3 flex-1">
-            <div className="flex-shrink-0">
-              <img src="logo-cacao.svg" alt="Cacao of Excellence Logo" className="h-12 w-auto" />
+            <div className="flex-shrink-0 cursor-pointer" onClick={() => navigate('/evaluate')}>
+              <img src="logo-cacao.svg" alt="Cacao flavor profiling Logo" className="h-12 w-auto" />
             </div>
             <div>
-              <h1 className="font-serif text-2xl font-bold tracking-wide">{t.title}</h1>
+              <h1 className="font-serif text-2xl font-bold tracking-wide text-cacao-50">{t.title}</h1>
               <p className="text-cacao-300 text-xs tracking-widest uppercase">{t.subtitle}</p>
             </div>
           </div>
@@ -47,15 +50,15 @@ const Header: React.FC = () => {
           {/* Right: Navigation Buttons */}
           <div className="flex gap-4 text-sm font-medium items-center flex-1 justify-end">
             <button
-              onClick={() => window.location.pathname !== '/evaluate' && (window.location.href = '/evaluate')}
-              className={`flex items-center gap-2 transition-colors ${window.location.pathname === '/evaluate' ? 'text-white font-bold' : 'text-cacao-200 hover:text-white'}`}
+              onClick={() => navigate('/evaluate')}
+              className={`flex items-center gap-2 transition-colors ${location.pathname === '/evaluate' ? 'text-white font-bold' : 'text-cacao-200 hover:text-white'}`}
             >
               <PenTool size={16} /> {t.evaluation}
             </button>
 
             <button
-              onClick={() => window.location.pathname !== '/samples' && (window.location.href = '/samples')}
-              className={`flex items-center gap-2 transition-colors ${window.location.pathname === '/samples' ? 'text-white font-bold' : 'text-cacao-200 hover:text-white'}`}
+              onClick={() => navigate('/samples')}
+              className={`flex items-center gap-2 transition-colors ${location.pathname === '/samples' ? 'text-white font-bold' : 'text-cacao-200 hover:text-white'}`}
             >
               <FileText size={16} /> {t.sampleLibrary}
             </button>

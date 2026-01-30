@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['logo-cacao.svg'],
+        includeAssets: ['logo-cacao.svg', 'favicon.png'],
         manifest: {
           name: 'CoEx Digital Grading',
           short_name: 'CoEx Grading',
@@ -26,6 +26,11 @@ export default defineConfig(({ mode }) => {
               sizes: 'any',
               type: 'image/svg+xml',
               purpose: 'any maskable'
+            },
+            {
+              src: 'favicon.png',
+              sizes: '192x192', // Assuming it's at least standard size, or 'any' if unsure
+              type: 'image/png'
             }
           ]
         }
