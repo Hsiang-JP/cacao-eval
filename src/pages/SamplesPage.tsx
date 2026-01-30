@@ -258,54 +258,56 @@ const SamplesPage: React.FC = () => {
                         />
                     </div>
 
-                    <div className="flex gap-3 w-full md:w-auto">
-                        <input
-                            type="file"
-                            id="csv-import-input"
-                            accept=".csv"
-                            className="hidden"
-                            onChange={handleFileChange}
-                        />
+                    <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
                         <button
                             onClick={handleImportClick}
-                            className="bg-white border border-cacao-200 text-cacao-700 font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-cacao-50 transition-colors flex items-center justify-center gap-2"
+                            className="bg-white border border-cacao-200 text-cacao-700 font-bold py-2 px-3 rounded-lg shadow-sm hover:bg-cacao-50 transition-colors flex items-center justify-center gap-2"
                             title={t.importSamples}
                         >
                             <Upload size={20} />
                         </button>
                         <button
                             onClick={handleExport}
-                            className="bg-white border border-cacao-200 text-cacao-700 font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-cacao-50 transition-colors flex items-center justify-center gap-2"
+                            className="bg-white border border-cacao-200 text-cacao-700 font-bold py-2 px-3 rounded-lg shadow-sm hover:bg-cacao-50 transition-colors flex items-center justify-center gap-2"
                             title={t.exportAllCSV}
                         >
                             <Download size={20} />
                         </button>
 
-                        {selectedIds.size > 0 && (
-                            <>
-                                <button
-                                    onClick={handleBulkPdf}
-                                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center gap-2"
-                                    title={language === 'es' ? "Descargar PDF" : "Download PDF"}
-                                >
-                                    <FileText size={20} />
-                                    PDF ({selectedIds.size})
-                                </button>
-                                <button
-                                    onClick={handleCompare}
-                                    className="bg-cacao-800 hover:bg-cacao-900 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <BarChart2 size={20} />
-                                    {t.compare || "Compare"} ({selectedIds.size})
-                                </button>
-                            </>
-                        )}
+                        <button
+                            onClick={handleBulkPdf}
+                            disabled={selectedIds.size === 0}
+                            className={`font-bold py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2 ${selectedIds.size === 0
+                                ? 'bg-amber-200 text-white cursor-not-allowed opacity-50'
+                                : 'bg-amber-600 hover:bg-amber-700 text-white'
+                                }`}
+                            title={language === 'es' ? "Descargar PDF" : "Download PDF"}
+                        >
+                            <FileText size={20} />
+                            <span className="hidden sm:inline">PDF</span>
+                            {selectedIds.size > 0 && <span>({selectedIds.size})</span>}
+                        </button>
+
+                        <button
+                            onClick={handleCompare}
+                            disabled={selectedIds.size < 2}
+                            className={`font-bold py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2 ${selectedIds.size < 2
+                                ? 'bg-cacao-300 text-white cursor-not-allowed opacity-50'
+                                : 'bg-cacao-800 hover:bg-cacao-900 text-white'
+                                }`}
+                            title={t.compare || "Compare"}
+                        >
+                            <BarChart2 size={20} />
+                            <span className="hidden sm:inline">{t.compare || "Compare"}</span>
+                            {selectedIds.size > 0 && <span>({selectedIds.size})</span>}
+                        </button>
+
                         <button
                             onClick={() => navigate('/evaluate')}
-                            className="flex-1 md:flex-none bg-cacao-600 hover:bg-cacao-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center gap-2"
+                            className="bg-cacao-600 hover:bg-cacao-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2"
                         >
                             <Plus size={20} />
-                            {t.newEvaluation}
+                            <span className="hidden sm:inline">{t.newEvaluation}</span>
                         </button>
                     </div>
                 </div>

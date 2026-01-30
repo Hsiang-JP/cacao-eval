@@ -55,7 +55,7 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
 
   // All attributes now use accordion mode
   return (
-    <div id={id} className={`bg-white rounded-xl shadow-sm border border-cacao-100 transition-all overflow-hidden ${disabled ? 'opacity-80 pointer-events-none' : ''}`}>
+    <div id={id} className={`bg-white rounded-xl shadow-sm border border-cacao-100 transition-all overflow-hidden scroll-mt-48 ${disabled ? 'opacity-80 pointer-events-none' : ''}`}>
       {/* Accordion Header - Always Visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -111,7 +111,7 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
               onChange={(e) => !isCalculated && onChange(parseFloat(e.target.value))}
               disabled={isCalculated || disabled}
               style={sliderStyle}
-              className={`w-full h-8 md:h-4 bg-gray-200 rounded-lg appearance-none touch-none ${!isCalculated && !disabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${!customColor ? colorClass : ''}`}
+              className={`w-full h-8 md:h-4 bg-gray-200 rounded-lg appearance-none touch-pan-y ${!isCalculated && !disabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${!customColor ? colorClass : ''}`}
             />
           </div>
 
@@ -141,7 +141,7 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
                     style={sliderStyle}
                     onChange={(e) => onSubAttributeChange(sub.id, parseFloat(e.target.value))}
                     disabled={disabled}
-                    className={`w-full h-1.5 bg-gray-200 rounded-lg appearance-none ${!disabled ? 'cursor-pointer' : 'cursor-not-allowed'} ${customColor ? '' : 'accent-cacao-500'}`}
+                    className={`w-full h-1.5 bg-gray-200 rounded-lg appearance-none touch-pan-y ${!disabled ? 'cursor-pointer' : 'cursor-not-allowed'} ${customColor ? '' : 'accent-cacao-500'}`}
                   />
                   {sub.id === 'def_other' && (
                     <input

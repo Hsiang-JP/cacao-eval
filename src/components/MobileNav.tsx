@@ -21,8 +21,12 @@ const MobileNav: React.FC<MobileNavProps> = ({ attributes, language, isEvaluatio
         if (element) {
             setIsOpen(false); // Close menu immediately
 
-            // Calculate position immediately before any changes
-            const headerOffset = 150;
+            // Calculate actual header height + some buffer for the secondary sticky header
+            const header = document.querySelector('header');
+            const headerHeight = header ? header.offsetHeight : 80;
+            // category sticky header is top-20 (80px), so we need at least headerHeight + 80
+            const headerOffset = headerHeight + 90;
+
             const elementPosition = element.getBoundingClientRect().top;
             const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 

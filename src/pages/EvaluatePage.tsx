@@ -565,7 +565,7 @@ const EvaluatePage: React.FC = () => {
                           value={session.globalQuality}
                           onChange={(e) => setSession(prev => ({ ...prev, globalQuality: parseFloat(e.target.value) }))}
                           disabled={!isEvaluationStarted}
-                          className={`w-full h-8 md:h-4 bg-gray-200 rounded-lg appearance-none accent-cacao-800 ${(!isEvaluationStarted) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                          className={`w-full h-8 md:h-4 bg-gray-200 rounded-lg appearance-none accent-cacao-800 touch-pan-y ${(!isEvaluationStarted) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                         />
                       </div>
                     </div>
