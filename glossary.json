@@ -1,0 +1,773 @@
+{
+    "glossary_metadata": {
+        "title_en": "Glossary of terms for sensory evaluation of cacao beans processed into mass and dark chocolate",
+        "title_es": "Glosario de términos para la evaluación sensorial de los granos de cacao procesadas en masa y chocolate oscuro",
+        "version": "July 2024",
+        "source": "Cacao of Excellence",
+        "citation_es": "Cacao de Excelencia. 2024. Glosario de términos para la evaluación sensorial de los granos de cacao procesadas en masa y chocolate oscuro. Bioversity Internaitonal. 5 Páginas.",
+        "citation_en": "Cacao of Excellence. 2024. Glossary of terms for the evaluation of cacao beans processed into mass and dark chocolate. Bioversity International. 5 pages."
+    },
+    "intensity_scale": [
+        {
+            "score": "0",
+            "en": "Absent.",
+            "es": "Ausente."
+        },
+        {
+            "score": "1",
+            "en": "Just a trace and may not be found if tasted again.",
+            "es": "Sólo un rastro y puede que no se encuentre si se prueba de nuevo."
+        },
+        {
+            "score": "2",
+            "en": "Present in the sample but at low intensity.",
+            "es": "Presente en la muestra pero con baja intensidad."
+        },
+        {
+            "score": "3-5",
+            "en": "Clearly characterising the sample.",
+            "es": "Claramente caracterizando la muestra."
+        },
+        {
+            "score": "6-8",
+            "en": "Dominant characterisation of the sample.",
+            "es": "Caracterización dominante de la muestra."
+        },
+        {
+            "score": "9-10",
+            "en": "Maximum. Strong intensity. Overpowers some other flavour notes in the sample.",
+            "es": "Máximo. Intensidad fuerte. Destaca sobre otras notas aromáticas de la muestra."
+        }
+    ],
+    "glossary_setup": {
+        "attribute_groups_en": {
+            "title": "The flavour attributes are divided into three groups:",
+            "groups": [
+                "1. Core attributes: cacao, acidity, bitterness, astringency and roast degree expected to be present in every sample and scored.",
+                "2. Complementary attributes: characteristics that may or may not be perceived in cacao samples.",
+                "3. Off-flavours: resulting from defects that may or may not be perceived in cacao samples."
+            ]
+        },
+        "attribute_groups_es": {
+            "title": "Los atributos de sabor se dividen en tres grupos:",
+            "groups": [
+                "1. Atributos principales: cacao, acidez, amargor, astringencia y grado de tostado, que se espera encontrar en todas las muestras y se califican o puntuan.",
+                "2. Atributos complementarios: características que pueden percibirse o no en las muestras de cacao.",
+                "3. Sabores atípicos/defectos: resultantes de defectos que pueden percibirse a no en las muestras de cacao."
+            ]
+        }
+    },
+    "attributes": {
+        "core": [
+            {
+                "id": "cacao",
+                "name": {
+                    "en": "Cacao",
+                    "es": "Cacao"
+                },
+                "description": {
+                    "en": "Typical flavour of roasted cacao beans that are well fermented, dried, free of defects.",
+                    "es": "Sabor típico de los granos de cacao tostados, bien fermentados, secos y sin defectos."
+                },
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "Under-fermented cacao, ancient Criollos.",
+                        "es": "Cacao poco fermentado, Criollos antiguos."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Appropriately fermented 'Nacional' and Papua New Guinean lots.",
+                        "es": "Cacao poco fermentado, Criollos antiguos."
+                    },
+                    {
+                        "level": "6-8",
+                        "en": "Appropriately fermented cacao, some West African and some Dominican Republic Hispaniolan lots.",
+                        "es": "Cacao fermentado adecuadamente, algunos lotes de Africa Occidental y otros de la República Dominicana Hispaniola/La Española."
+                    },
+                    {
+                        "level": "9-10",
+                        "en": "Some West African lots.",
+                        "es": "Algunos lotes de África Occidental bien preparados."
+                    }
+                ]
+            },
+            {
+                "id": "acidity",
+                "name": {
+                    "en": "Acidity",
+                    "es": "Acidez"
+                },
+                "description": {
+                    "en": "Total acidity is the sum of the following individual acidities. If the result is >= 10 it is rounded to 10 as the maximum. Perception of acidity intensity is particularly dependent on the amount of sample in the mouth.",
+                    "es": "Acidez total es la suma de las siguientes acideces individuales. Si el resultado es >= 10 se redondea a 10 como máximo. La percepción de la intensidad de la acidez depende especialmente de la cantidad de muestra en la boca."
+                },
+                "sub_attributes": [
+                    {
+                        "en": "• Fruit: citric or other fruit acids.",
+                        "es": "• Frutas: ácido cítrico u otros ácidos de frutas."
+                    },
+                    {
+                        "en": "• Acetic: vinegar (can be smelled in the sample).",
+                        "es": "• Acético: vinagre (puede olerse en la muestra)."
+                    },
+                    {
+                        "en": "• Lactic: typically occurring in sour milk and yogurt",
+                        "es": "• Láctico: típico de la leche agria y el yogur"
+                    },
+                    {
+                        "en": "• Mineral and butyric: harsh metallic tasting (mineral) and rancid butter (butyric).",
+                        "es": "• Mineral y butírica: sabor metálico áspero (mineral) y a mantequilla rancia (butírica)."
+                    }
+                ],
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "Some well-prepared West African lots.",
+                        "es": "Algunos lotes de África Occidental bien preparados."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Some Ecuadorian, Peruvian and Central American lots.",
+                        "es": "Algunos lotes ecuatorianos, peruanos y centroamericanos."
+                    },
+                    {
+                        "level": "6-8",
+                        "en": "Some Dominican Republic Hispaniola, Papua New Guinean and Malaysian lots.",
+                        "es": "Algunos lotes de República Dominicana Hispaniola/La Española, Papúa Nueva Guinea y Malasia."
+                    }
+                ]
+            },
+            {
+                "id": "bitterness",
+                "name": {
+                    "en": "Bitterness",
+                    "es": "Amargor"
+                },
+                "description": {
+                    "en": "Basic taste, typically perceived in caffeine, coffee, kola nut, some beers and grapefruit. Perception of bitterness intensity is particularly dependent on the amount of sample in the mouth.",
+                    "es": "Sabor básico, típicamente percibido en la cafeína, el café, la nuez de cola, algunas cervezas y el pomelo/toronja. La percepción de la intensidad del amargor depende especialmente de la cantidad de muestra en la boca."
+                },
+                "reference_notes": [
+                    {
+                        "level": "1-2",
+                        "en": "Some ancient Criollos.",
+                        "es": "Algunos Criollos antiguos."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Well-prepared West African lots.",
+                        "es": "Lotes de África Occidental bien preparados."
+                    },
+                    {
+                        "level": "6-8",
+                        "en": "Severely under- and un-fermented cacao.",
+                        "es": "Cacao en alto grado poco fermentados o sin fermentar."
+                    }
+                ]
+            },
+            {
+                "id": "astringency",
+                "name": {
+                    "en": "Astringency",
+                    "es": "Astringencia"
+                },
+                "description": {
+                    "en": "Astringency could be perceived in two ways: Sharp mouthdrying-effect, sharp, perceived between tongue and palate and/or at the back of the front teeth and inside lips and gums - typical of raw nut skins and green banana skins. OR Velvety sensation on the sides of mouth and tongue. Typical of tannins in some wines or beers. Perception of astringency intensity is particularly dependent on the amount of sample in the mouth.",
+                    "es": "La astringencia puede percibirse de dos maneras: Fuerte efecto secante de boca, agudo, percibido entre la lengua y el paladar y/o en la parte posterior de los dientes frontales y en el interior de los labios y las encías - típico de pieles de nueces crudas y pieles de plátano verde. O Sensación aterciopelada en los lados de la boca y lengua. Típico de los taninos de algunos vinos o cervezas. La percepción de la intensidad de la astringencia es particularmente dependiendo de la cantidad de muestra en la boca."
+                },
+                "reference_notes": [
+                    {
+                        "level": "1-2",
+                        "en": "Some ancient Criollos.",
+                        "es": "Algunos criollos antiguos."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Normal intensity for most cacao.",
+                        "es": "Intensidad normal para la mayoría de los cacaos."
+                    },
+                    {
+                        "type_en": "Sharp mouth-drying",
+                        "type_es": "Sequedad aguda de boca",
+                        "en": "Typical of under-fermented cacao.",
+                        "es": "Típico de algunos cacaos poco fermentados."
+                    },
+                    {
+                        "type_en": "Velvety",
+                        "type_es": "Aterciopelada",
+                        "en": "Typical of appropriately fermented 'Nacional'.",
+                        "es": "Típico del “Nacional” adecuadamente fermentado."
+                    }
+                ]
+            },
+            {
+                "id": "roast_degree",
+                "name": {
+                    "en": "Roast degree",
+                    "es": "Grado de tostado"
+                },
+                "description": {
+                    "en": "A measure of the extent of the roasting the beans. Significant under or over roasting alters many of the attribute values.",
+                    "es": "Medida del grado de tostado de los granos. Un tostado excesivo o insuficiente altera muchos de los valores de los atributos"
+                },
+                "reference_notes": [
+                    {
+                        "level": "2-3",
+                        "en": "Low roast",
+                        "es": "Tostado bajo."
+                    },
+                    {
+                        "level": "4-6",
+                        "en": "Medium roast",
+                        "es": "Tostado medio."
+                    },
+                    {
+                        "level": "7",
+                        "en": "High roast",
+                        "es": "Tostado alto."
+                    },
+                    {
+                        "level": "8-10",
+                        "en": "Levels of burnt/over-roasted",
+                        "es": "Niveles de quemado/sobre tostado."
+                    }
+                ]
+            }
+        ],
+        "complementary_attributes": [
+            {
+                "id": "fresh_fruit",
+                "name": {
+                    "en": "Fresh fruit",
+                    "es": "Fruta fresca"
+                },
+                "description": {
+                    "en": "Total fresh fruit is composed of the following sub-attributes:",
+                    "es": "El total de fruta fresca se compone de los siguientes subatributos:"
+                },
+                "sub_attributes": [
+                    {
+                        "en": "• Berry: red or black currant, strawberry, raspberry, blackberry, acai berry.",
+                        "es": "• Bayas: grosella roja o negra, fresa, frambuesa, mora, baya de acai."
+                    },
+                    {
+                        "en": "• Citrus: orange, lemon, lime, grapefruit or generic sensation of citrus-like fruit.",
+                        "es": "• Citricos: naranja, limón, lima, pomelo/toronja o sensación genérica de cítricos."
+                    },
+                    {
+                        "en": "• Dark: cherry, plum.",
+                        "es": "• Oscura: cereza, ciruela."
+                    },
+                    {
+                        "en": "• Yellow / orange / white flesh: apricot, peach, pear, banana.",
+                        "es": "• Pulpa amarilla / naranja / blanca: albaricoque, melocotón, pera, banano."
+                    },
+                    {
+                        "en": "• Tropical: passion fruit, pineapple, mango or soursop.",
+                        "es": "• Tropical: maracuyá, piña, mango o guanábana."
+                    }
+                ],
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "Many West African lots.",
+                        "es": "Muchos lotes de África Occidental."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Some Central and South American, well fermented Asia and Pacific country lots.",
+                        "es": "Algunos lotes de América Central y del Sur, lotes bien fermentados de países de Asia y del Pacífico."
+                    },
+                    {
+                        "level": "6-7",
+                        "en": "Madagascar, some Central and South American country lots, some Papua New Guinean lots.",
+                        "es": "Madagascar, algunos lotes de países de América Central y del Sur, algunos lotes de Papúa Nueva Guinea."
+                    }
+                ]
+            },
+            {
+                "id": "browned_fruit",
+                "name": {
+                    "en": "Browned fruit",
+                    "es": "Fruta marrón"
+                },
+                "description": {
+                    "en": "Total browned fruit is composed of the following sub-attributes:",
+                    "es": "El total de fruta marrón se compone de los siguientes subatributos:"
+                },
+                "sub_attributes": [
+                    {
+                        "en": "• Dried: dried apricot, banana, yellow raisin, fig that has undergone an un sulphured drying process.",
+                        "es": "• Seca: albaricoque seco, banano, uva pasa amarilla, higo que ha sido sometido a un proceso de secado no sulfurado."
+                    },
+                    {
+                        "en": "• Browned: dark raisin, dates, prunes.",
+                        "es": "• Marrón: uvas pasas oscuras, dátiles, ciruelas pasas."
+                    },
+                    {
+                        "en": "• Over ripe: No longer fresh and severely over-ripe fruit, turning brown inside and outside, as a step towards over-fermentation.",
+                        "es": "• Sobre madura: Fruta ya no fresca y muy sobre madurada, que se vuelve marrón por dentro y por fuera, como paso previo a la sobre fermentación."
+                    }
+                ],
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "Many West African lots.",
+                        "es": "Muchos lotes de África Occidental."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Fully fermented Indonesian and some Caribbean country lots.",
+                        "es": "Lotes totalmente fermentados de Indonesia y de algunos países caribeños."
+                    },
+                    {
+                        "level": "6-8",
+                        "en": "Some Papua New Guinean and some Caribbean country lots.",
+                        "es": "Algunos lotes de Papúa Nueva Guinea y otros del Caribe."
+                    }
+                ]
+            },
+            {
+                "id": "vegetal",
+                "name": {
+                    "en": "Vegetal",
+                    "es": "Vegetal"
+                },
+                "description": {
+                    "en": "Total vegetal is composed of the following sub-attributes:",
+                    "es": "El total de vegetal se compone de los siguientes subatributos:"
+                },
+                "sub_attributes": [
+                    {
+                        "en": "• Grassy / Green vegetal / herbal: Grassy (freshly cut grass, young green leaves), Green vegetal (crushed mature leaves), Herbal (hay, straw or herbal/ dried green, herbs like thyme and rosemary).",
+                        "es": "• Pasto/vegetal verde / hierba: Pasto (hierba recién cortada, hojas verdes jóvenes), Vegetal verde (hojas maduras trituradas), Hierba (heno, paja o herbal / verde seco, hierbas como el tomillo y el romero)."
+                    },
+                    {
+                        "en": "• Earthy / mushroom / moss / woodsy: Earthy (smell of dampness rising from soil after rain), Mushroom (smell of fresh mushrooms), Moss (damp moss often associated with earthiness), Woodsy (leaves and wood on a forest floor).",
+                        "es": "• Terroso / hongo / musgo / bosque: Terroso (huele a humedad que surge de la tierra después de la lluvia), Hongo (olor a seta fresca), Musgo (el musgo húmedo se asocia a menudo con la tierra o lo terroso), Bosque (hojas y madera en el suelo de un bosque)."
+                    }
+                ],
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "West African lots.",
+                        "es": "Lotes de África Occidental."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Appropriately fermented “Nacional” and some Caribbean country lots.",
+                        "es": "“Nacional” debidamente fermentado y algunos lotes de países caribeños."
+                    },
+                    {
+                        "level": "6-8",
+                        "en": "Some Caribbean country lots and some Peruvian lots.",
+                        "es": "Algunos lotes de países caribeños y algunos lotes peruanos."
+                    }
+                ]
+            },
+            {
+                "id": "floral",
+                "name": {
+                    "en": "Floral",
+                    "es": "Floral"
+                },
+                "description": {
+                    "en": "Total floral is composed of the following:",
+                    "es": "El total de floral se compone de los siguientes subatributos:"
+                },
+                "sub_attributes": [
+                    {
+                        "en": "• Orange blossom: orange blossom flavour.",
+                        "es": "• Flor de azahar: sabor de flor de azahar o flor de naranjo."
+                    },
+                    {
+                        "en": "• Flowers: jasmine, honeysuckle, rose, lilac, lilies, etc.",
+                        "es": "• Flores: jazmín, madreselva, rosa, lila, lirios, etc."
+                    }
+                ],
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "West African lots.",
+                        "es": "Lotes de África Occidental."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Appropriately fermented “Nacional” and some Caribbean country lots.",
+                        "es": "“Nacional” con fermentación adecuada y algunos lotes de países caribeños."
+                    },
+                    {
+                        "level": "6-8",
+                        "en": "Some Caribbean country lots and some Peruvian lots.",
+                        "es": "Algunos lotes de países caribeños y algunos lotes peruanos."
+                    }
+                ]
+            },
+            {
+                "id": "woody",
+                "name": {
+                    "en": "Woody",
+                    "es": "Madera"
+                },
+                "description": {
+                    "en": "Total woody is composed of the following sub-attributes:",
+                    "es": "El total de madera se compone de los siguientes subatributos:"
+                },
+                "sub_attributes": [
+                    {
+                        "en": "• Light wood: freshly cut cacao wood, white pine wood, maple wood, ice-cream/popsicle wooden stick.",
+                        "es": "• Madera clara: madera de cacao recién cortada, madera de pino, madera de maple, palito de helado."
+                    },
+                    {
+                        "en": "• Dark wood: oak, walnut, teak, mahogany.",
+                        "es": "• Madera oscura: roble, nogal, teca, caoba."
+                    },
+                    {
+                        "en": "• Resin: pitch of pine or other resinous wood.",
+                        "es": "• Resina: resina de pino u otra madera resinosa."
+                    }
+                ],
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "No specific reference notes provided.",
+                        "es": "No se proporcionan notas de referencia específicas."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Some “Nacional” and many West African lots.",
+                        "es": "Algunos lotes “Nacionales” y muchos lotes de África Occidental."
+                    }
+                ]
+            },
+            {
+                "id": "spice",
+                "name": {
+                    "en": "Spice",
+                    "es": "Especia"
+                },
+                "description": {
+                    "en": "Total spice is composed of the following sub-attributes:",
+                    "es": "La especia total se compone de los siguientes subatributos:"
+                },
+                "sub_attributes": [
+                    {
+                        "en": "• Spices: dried coconut, nutmeg, cinnamon, cloves, cacao mass, tonka, vanilla, black pepper.",
+                        "es": "• Especias: coco seco, nuez moscada, canela, clavos, masa de cacao, tonka, vainilla, pimienta negra."
+                    },
+                    {
+                        "en": "• Tobacco: dried tobacco leaves.",
+                        "es": "• Tabaco: hojas de tabaco secas."
+                    },
+                    {
+                        "en": "• Savoury/Umami: sodium glutamate, umami.",
+                        "es": "• Sazonado/Umami: glutamato sódico, umami."
+                    }
+                ],
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "In most origins.",
+                        "es": "En la mayoría de los orígenes."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "In some West African, Central and South American and Caribbean country lots.",
+                        "es": "En algunos lotes de países de África Occidental, América Central y del Sur y el Caribe."
+                    }
+                ]
+            },
+            {
+                "id": "nutty",
+                "name": {
+                    "en": "Nutty",
+                    "es": "Nuez"
+                },
+                "description": {
+                    "en": "Total nutty is composed of the following sub-attributes:",
+                    "es": "El total de nuez se compone de los siguientes subatributos:"
+                },
+                "sub_attributes": [
+                    {
+                        "en": "• Nutty - nut flesh: the edible kernel of a light roasted nut hazelnut, macadamia, pecan, walnut, cashew, almond, Brazil nut.",
+                        "es": "• Nuez-parte interna: el grano comestible de una nuez ligeramente tostada - avellana, macadamia, pecana, nogal, anacardo o marañón, almendra, nuez de Brasil."
+                    },
+                    {
+                        "en": "• Nutty - nut skins: the flavour of lightly roasted nut skins - hazelnut, macadamia, pecan, walnut, cashew, almond, Brazil nut.",
+                        "es": "• Nuez piel: el sabor de las cáscaras de nuez ligeramente tostadas - avellana, macadamia, pecana, nogal, anacardo o marañón, almendra, nuez de Brasil."
+                    }
+                ],
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "In most origins.",
+                        "es": "En la mayoría de los orígenes."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Some Central and South American and Caribbean countries' lots and ancient Criollos.",
+                        "es": "Los lotes de algunos países de América Central, del Sur y del Caribe y los antiguos Criollos."
+                    }
+                ]
+            },
+            {
+                "id": "caramel",
+                "name": {
+                    "en": "Caramel / Panela",
+                    "es": "Caramelo / Panela"
+                },
+                "description": {
+                    "en": "Aromas reminiscent of caramel, brown sugar and panela (unrefined cane sugar)",
+                    "es": "Aromas que recuerdan al caramelo, el azúcar moreno y la panela (azúcar de caña sin refinar)."
+                },
+                "reference_notes": [
+                    {
+                        "level": "0-2",
+                        "en": "In most origins",
+                        "es": "En la mayoría de los orígenes.."
+                    },
+                    {
+                        "level": "3-5",
+                        "en": "Some Central and South American and Caribbean countries' lots and ancient Criollos",
+                        "es": "Los lotes de algunos países de América Central, del Sur y del Caribe y los antiguos Criollos."
+                    }
+                ]
+            },
+            {
+                "id": "sweetness",
+                "name": {
+                    "en": "Sweetness (only for chocolate)",
+                    "es": "Dulzor (sólo para el chocolate)"
+                },
+                "description": {
+                    "en": "Basic taste of white sugar solutions, typically perceived in foods like candies and desserts that contain sugar (or other sweeteners such as aspartame) and also naturally found in other foods like fruits.",
+                    "es": "Sabor básico de las soluciones de azúcar blanca, típicamente percibido en alimentos como caramelos y postres que contienen azúcar (u otros edulcorantes como el aspartamo) y que también se encuentra de forma natural en otros alimentos como las frutas."
+                },
+                "reference_notes": [
+                    {
+                        "en": "No specific intensity levels or reference notes provided for this attribute.",
+                        "es": "No se proporcionan niveles de intensidad ni notas de referencia específicas para este atributo."
+                    }
+                ]
+            }
+        ],
+        "off_flavours": {
+            "name": {
+                "en": "Off-flavours",
+                "es": "Sabores atípicos / Defectos"
+            },
+            "description": {
+                "en": "Total Off-Flavours is the sum of any unpleasant characters from the following. If the result is >= 10 it is rounded to 10 as the maximum:",
+                "es": "El total de sabores atípicos/defectos es la suma de todos los caracteres desagradables como los siguientes. Si el resultado es >= 10 se redondea a 10 como máximo:"
+            },
+            "list": [
+                {
+                    "en": "Dirty/dusty: not related to texture but to an off-flavour.",
+                    "es": "Sucio/empolvado: no está relacionado con la textura, sino con un sabor atípico/defecto."
+                },
+                {
+                    "en": "Musty: stale, damp, mildew, decaying.",
+                    "es": "Humedad: viejo, húmedo, moho, en descomposición."
+                },
+                {
+                    "en": "Mouldy: characteristic of mould growth.",
+                    "es": "Mohoso: característico del crecimiento de moho."
+                },
+                {
+                    "en": "Meaty/animal/leather: Meaty (cured meat, ham, rendered fat), Animal (dirty animal / farmyard), Leather (used old leather).",
+                    "es": "Carne/animal/cuero: Carne (carne curada, jamón, grasa extraída o fundida), Animal (animal sucio / corral), Cuero (cuero viejo usado)."
+                },
+                {
+                    "en": "Over-fermented/rotten fruit: decomposing fruit.",
+                    "es": "Sobre-fermentado/fruta podrida: fruta en descomposición."
+                },
+                {
+                    "en": "Putrid/manure: Putrid (wet decomposing vegetative matter), Manure (farmyard animal manure).",
+                    "es": "Podrido/estiércol: Podrido (materia vegetal húmeda en descomposición), Estiércol (estiércol de animales de corral)."
+                },
+                {
+                    "en": "Smoky: contamination from the smoke (any kind).",
+                    "es": "Humo: contaminación por el humo (de cualquier tipo)."
+                },
+                {
+                    "en": "Other off-flavours: rancid, diesel, oil fumes, petroleum, tar, paint, tyres, chemicals, burnt, etc.",
+                    "es": "Otros olores: rancio, diesel, vapores de aceite, petróleo, alquitrán, pintura, neumáticos, productos químicos, quemado, etc."
+                }
+            ],
+            "scoring": [
+                {
+                    "level": "0",
+                    "en": "Absent - clean, well fermented, dried and stored cacao beans.",
+                    "es": "Ausente - granos de cacao limpios, bien fermentados, secos y almacenados."
+                },
+                {
+                    "level": "1-2",
+                    "en": "Low intensity.",
+                    "es": "Intensidad baja."
+                },
+                {
+                    "level": "3+",
+                    "en": "Clearly characterizing the sample as a defect.",
+                    "es": "Caracterizando claramente la muestra como un defecto."
+                }
+            ]
+        }
+    },
+    "global_quality_section": {
+        "descriptor": {
+            "en": "Global Quality",
+            "es": "Calidad global"
+        },
+        "description": {
+            "en": "The Global Quality score reflects the overall impression of the: \n• expressed flavour potential \n• uniqueness of the sample \n• balance of flavour and cleanliness of the finish \nIt celebrates the expression of genetics and terroir diversity through the farmer's knowhow.",
+            "es": "La puntuación de la calidad global refleja la impresión general del: \n• potencial aromático expresado \n• carácter único de la muestra \n• equilibrio del sabor y la pulcritud del acabado \nCelebra la expresión de la genética y la diversidad del terruño (terroir) a través del saber/conocimiento del agricultor."
+        },
+        "score_reference": {
+            "en": "Global Quality scores and meaning below",
+            "es": "Puntuaciones globales de calidad y significado a continuación."
+        },
+        "scores_meaning_table_title": {
+            "en": "Meaning of the global quality scores for the sensory evaluation of cacao beans processed into mass and chocolate",
+            "es": "Significado de las puntuaciones globales de calidad para la evaluación sensorial de los granos de cacao procesados en masa y chocolate"
+        },
+        "table_headers": {
+            "score": {
+                "en": "Score",
+                "es": "Puntuación"
+            },
+            "off_flavours": {
+                "en": "Off-flavours",
+                "es": "Sabores atípicos /defectos"
+            },
+            "core_attributes": {
+                "en": "Core attributes",
+                "es": "Atributos principales"
+            },
+            "complementary_attributes": {
+                "en": "Complementary attributes",
+                "es": "Atributos complementarios"
+            },
+            "notes": {
+                "en": "Notes",
+                "es": "Notas"
+            }
+        },
+        "table_data": [
+            {
+                "score": "0 - 3",
+                "off_flavours": {
+                    "en": "Serious offflavours - clearly characterizing the sample as defective",
+                    "es": "Sabores atípicos/defectos graves, claramente caracterizando la muestra como defectuosa"
+                },
+                "core_attributes": {
+                    "en": "Masked by offflavours - Seriously unbalanced",
+                    "es": "Enmascarado por sabores atípicos/defectos - Seriamente desbalanceado"
+                },
+                "complementary_attributes": {
+                    "en": "Masked by off-flavours",
+                    "es": "Enmascarado por sabores atípicos/defectos"
+                },
+                "notes": {
+                    "en": "Be as specific as possible on the type of off-flavours as this is valuable feedback to the producers. Depending on the type, number and intensity of off-flavours, 0 would be the worst case and 3 the least but still bad.",
+                    "es": "Sea lo más específico en el tipo de sabores atípicos/defectos, ya que es una información valiosa para los productores. En función del tipo, el número y la intensidad de los sabores atípicos/defectos, 0 sería el peor de los casos y 3 el menor, pero sigue siendo malo"
+                }
+            },
+            {
+                "score": "4 - 6",
+                "off_flavours": {
+                    "en": "In low intensity",
+                    "es": "En baja intensidad"
+                },
+                "core_attributes": {
+                    "en": "Unbalanced",
+                    "es": "Desbalanceado"
+                },
+                "complementary_attributes": {
+                    "en": "Masked by offflavours - and unbalanced core attributes. Partially masked by unbalanced core attributes. In low intensity, none outstanding, not in balance to core attributes",
+                    "es": "Enmascarado por sabores atípicos/defectos y atributos principales desbalanceados. Enmascarado parcialmente por desbalances en los atributos principales. En baja intensidad, ninguno sobresaliente, no están en equilibrio con los atributos principales"
+                },
+                "notes": {
+                    "en": "Overall plain flavour - mainly characterized by the core attributes and less by the complementary attributes",
+                    "es": "Sabor plano general: caracterizado principalmente por los atributos principales y menos por los complementarios."
+                }
+            },
+            {
+                "score": "7",
+                "off_flavours": {
+                    "en": "Absence of any",
+                    "es": "Ausencia de cualquiera"
+                },
+                "core_attributes": {
+                    "en": "Balanced",
+                    "es": "Balanceado"
+                },
+                "complementary_attributes": {
+                    "en": "One or more are outstanding but not in balance to core attributes.",
+                    "es": "Uno o más son sobresalientes, pero no están balanceados con los atributos principales"
+                },
+                "notes": {
+                    "en": "Overall plain flavour - mainly characterized by the core attributes and less by the complementary attributes",
+                    "es": "Sabor plano general: caracterizado principalmente por los atributos principales y menos por los complementarios."
+                }
+            },
+            {
+                "score": "8",
+                "off_flavours": {
+                    "en": "Absence of any",
+                    "es": "Ausencia de cualquiera"
+                },
+                "core_attributes": {
+                    "en": "Well balanced with moderate base cacao flavour",
+                    "es": "Bien balanceado con sabor a cacao de base moderada"
+                },
+                "complementary_attributes": {
+                    "en": "One or more are outstanding, in balance to core attributes and to each other",
+                    "es": "Destacan uno o varios, en balance con los atributos principales y entre sí"
+                },
+                "notes": {
+                    "en": "Overall flavour presents some complexity",
+                    "es": "El sabor general presenta cierta complejidad"
+                }
+            },
+            {
+                "score": "9",
+                "off_flavours": {
+                    "en": "Absence of any",
+                    "es": "Ausencia de cualquiera"
+                },
+                "core_attributes": {
+                    "en": "Well balanced, good base cacao flavour",
+                    "es": "Bien balanceado, buena base de sabor a cacao"
+                },
+                "complementary_attributes": {
+                    "en": "Many outstanding, in balance to core attributes and to each other",
+                    "es": "Muchos sobresalientes, balanceados con los atributos principales y entre sí"
+                },
+                "notes": {
+                    "en": "Overall flavour presents a combination of complexity, uniqueness, harmony, brightness, clean finish",
+                    "es": "El sabor general presenta una combinación de complejidad, singularidad, armonía, brillo, final limpio"
+                }
+            },
+            {
+                "score": "10",
+                "off_flavours": {
+                    "en": "Absence of any",
+                    "es": "Ausencia de cualquiera"
+                },
+                "core_attributes": {
+                    "en": "Well balanced, in low to moderate intensity, good base cacao flavour",
+                    "es": "Bien balanceado, intensidad baja a moderada, buena base de sabor a cacao"
+                },
+                "complementary_attributes": {
+                    "en": "Clearly recognizable, many outstanding, in balance to core attributes and to each other",
+                    "es": "Claramente reconocibles, muchos sobresalientes, en balance con los atributos básicos y entre sí"
+                },
+                "notes": {
+                    "en": "Overall flavour presents a combination of complexity, uniqueness, harmony, brightness, clean finish. The sample is of extraordinary quality, rarely seen",
+                    "es": "El sabor general presenta una combinación de complejidad, singularidad, armonía, brillo, final limpio. La muestra es de una calidad extraordinaria, rara vez vista"
+                }
+            }
+        ]
+    }
+}
