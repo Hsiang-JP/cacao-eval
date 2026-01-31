@@ -115,7 +115,7 @@ const generateChartImage = (attributes: FlavorAttribute[], language: 'en' | 'es'
       options: {
         responsive: false,
         animation: false,
-        layout: { padding: 20 },
+        layout: { padding: 5 },
         scales: {
           r: {
             min: 0, max: 10,
@@ -235,8 +235,8 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
     // Flavor Graph (Chart)
     if (chartImage) {
       const pdfWidth = doc.internal.pageSize.getWidth();
-      const imgWidth = 90; // mm
-      const imgHeight = 90; // Aspect ratio is 1:1 for our config
+      const imgWidth = 140; // mm
+      const imgHeight = 140; // Aspect ratio is 1:1 for our config
       const x = (pdfWidth - imgWidth) / 2;
 
       if (currentY + imgHeight > 270) {
@@ -351,7 +351,7 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
         const aftertasteDuration = tds.totalDuration - actualSwallow;
 
         const onsetLabel = t("First Flavor Onset", "Primer Sabor");
-        const aftertasteLabel = t("Aftertaste Duration", "Duración Retrogusto");
+        const aftertasteLabel = t("Aftertaste Duration", "Duración Post-gusto");
 
         doc.text(`${onsetLabel}: ${firstOnset.toFixed(1)}s`, 14, currentY);
         doc.text(`${aftertasteLabel}: ${aftertasteDuration.toFixed(1)}s`, 80, currentY);
@@ -551,7 +551,7 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
         // Dominant Aftertaste
         if (analysis.dominantAftertaste) {
           const domLabel = attrLabels[analysis.dominantAftertaste]?.[isEs ? 'es' : 'en'] || analysis.dominantAftertaste;
-          addTextSection(t("Dominant Aftertaste", "Retrogusto Dominante"), domLabel);
+          addTextSection(t("Dominant Aftertaste", "Post-gusto Dominante"), domLabel);
         }
 
         // Aftertaste Boosts (e.g., "Cacao +3, Nutty +2")
@@ -562,7 +562,7 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
               return `${label} +${b.amount}`;
             })
             .join(', ');
-          addTextSection(t("Aftertaste Boosts", "Refuerzos de Retrogusto"), boostText);
+          addTextSection(t("Aftertaste Boosts", "Refuerzos de Post-gusto"), boostText);
         }
 
         // 6. Quality Adjustment (moved to bottom)
@@ -579,11 +579,12 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
           const kickText = analysis.kickSuggestions.join('\n');
           addTextSection(t("Initial Kick Insights", "Observaciones del Impacto Inicial"), kickText);
         }
+        const aftertasteLabel = t("Aftertaste Duration", "Duración Post-gusto");
 
         // 8. Quality Suggestions
         if (analysis.qualitySuggestions && analysis.qualitySuggestions.length > 0) {
           const qualityText = analysis.qualitySuggestions.join('\n');
-          addTextSection(t("Aftertaste Quality Insights", "Observaciones de Calidad del Retrogusto"), qualityText);
+          addTextSection(t("Aftertaste Quality Insights", "Observaciones de Calidad del Post-gusto"), qualityText);
         }
       }
     }

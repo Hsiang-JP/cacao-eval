@@ -23,6 +23,10 @@ const ReferencesPage: React.FC = () => {
         websiteLink: {
             en: "Visit Cacao of Excellence Website",
             es: "Visitar Sitio Web de Cacao of Excellence"
+        },
+        publicationsTitle: {
+            en: "Scientific Publications",
+            es: "Publicaciones Científicas"
         }
     };
 
@@ -79,6 +83,60 @@ const ReferencesPage: React.FC = () => {
                                 </p>
                             </div>
                         </a>
+                    </div>
+                </section>
+
+                {/* Publications Section */}
+                <section className="space-y-4">
+                    <h2 className="text-xl font-bold text-cacao-800 flex items-center gap-2">
+                        <FileText className="text-cacao-600" />
+                        {content.publicationsTitle[language]}
+                    </h2>
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-cacao-100 space-y-6">
+                        <div className="space-y-2">
+                            <p className="text-cacao-900 font-medium">
+                                Labbe, D., Schlich, P., Pineau, N., Gilbert, F., & Martin, N. (2009).
+                            </p>
+                            <p className="text-gray-700 italic">
+                                Temporal dominance of sensations and sensory profiling: A comparative study.
+                            </p>
+                            <p className="text-gray-600">
+                                Food Quality and Preference, 20(3), 216–221.
+                                <a href="https://doi.org/10.1016/j.foodqual.2008.09.006" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
+                                    https://doi.org/10.1016/j.foodqual.2008.09.006
+                                </a>
+                            </p>
+                        </div>
+
+                        <div className="border-t border-gray-100 pt-6 space-y-2">
+                            <p className="text-cacao-900 font-medium">
+                                Pineau, N., Cordelle, S., Imbert, A., Rogeaux, M., & Schlich, P. (2009).
+                            </p>
+                            <p className="text-gray-700 italic">
+                                Temporal Dominance of Sensations: Construction of the TDS curves and comparison with time–intensity.
+                            </p>
+                            <p className="text-gray-600">
+                                Food Quality and Preference, 20(6), 450–455.
+                                <a href="https://doi.org/10.1016/j.foodqual.2009.04.005" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
+                                    https://doi.org/10.1016/j.foodqual.2009.04.005
+                                </a>
+                            </p>
+                        </div>
+
+                        <div className="border-t border-gray-100 pt-6 space-y-2">
+                            <p className="text-cacao-900 font-medium">
+                                Januszewska, R. (2018).
+                            </p>
+                            <p className="text-gray-700 italic">
+                                Hidden persuaders in cocoa and chocolate: A flavor lexicon for cocoa and chocolate sensory professionals.
+                            </p>
+                            <p className="text-gray-600">
+                                Woodhead Publishing.
+                                <a href="https://doi.org/10.1016/C2017-0-03055-0" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
+                                    https://doi.org/10.1016/C2017-0-03055-0
+                                </a>
+                            </p>
+                        </div>
                     </div>
                 </section>
             </main>

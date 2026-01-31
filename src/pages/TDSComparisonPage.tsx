@@ -232,13 +232,13 @@ const TDSComparisonPage: React.FC = () => {
                                     <li className="flex items-start gap-2">
                                         <span className="font-bold">•</span>
                                         <span>
-                                            <strong>Normalization Effect:</strong> Expert mode sums durations of sub-attributes (e.g., Berry + Citrus) before calculating the Core Score. Normal mode uses the Core attribute directly. Discrepancies often stem from users clicking specific traits more frequently/confidently than the broad Core categories.
+                                            <strong>No Normalization Summation:</strong> Expert mode now calculates Core Scores based <em>only</em> on the Core attribute's own duration (matching Normal mode).
                                         </span>
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <span className="font-bold">•</span>
                                         <span>
-                                            <strong>Interaction Density:</strong> Expert mode typically generates more "active" time because users hunt for specifics. Normal mode often has more gaps.
+                                            <strong>Recommendation Boosts:</strong> Instead of hiding child attributes in the score, significant child attribute presence (e.g., Berry, Citrus) triggers a <strong>Recommendation Boost (+1 or +2)</strong> visible as separate guidance.
                                         </span>
                                     </li>
                                 </ul>

@@ -102,7 +102,7 @@ export const TRANSLATIONS = {
     clone: 'Clonar',
     noSamples: 'No se encontraron muestras',
     actions: 'Acciones',
-    sampleLibrary: 'Biblioteca de Muestras',
+    sampleLibrary: 'Biblioteca',
     evaluation: 'Evaluación',
     viewAndEdit: 'Ver y Editar'
   }
@@ -409,7 +409,7 @@ export const INITIAL_QUALITY_ATTRIBUTES: QualityAttribute[] = [
     id: 'q_aftertaste',
     name: 'Quality of Finish / Aftertaste',
     nameEn: 'Quality of Finish / Aftertaste',
-    nameEs: 'Calidad del final / regusto',
+    nameEs: 'Calidad del final / post-gusto',
     score: 0,
     csvHeaderEn: 'Quality of Finish / Aftertaste',
     csvHeaderEs: 'Calidad del final / regusto'
@@ -591,7 +591,7 @@ export const CSV_HEADERS_ES = [
   "Calidad de la acidez",
   "Calidad de la astringencia",
   "Calidad del amargor",
-  "Calidad del final / regusto",
+  "Calidad del final / post-gusto",
   // TDS Headers
   "Modo TDS",
   "Duración Total TDS (s)",
@@ -613,10 +613,10 @@ export const CSV_HEADERS_ES = [
   "Intervalos TDS - Dulzor",
   "Intervalos TDS - Defectos",
   "Intensidad de Aroma TDS",
-  "Intensidad de Retrogusto TDS",
-  "Calidad de Retrogusto TDS",
-  "Retrogusto Dominante TDS",
-  "Refuerzos de Retrogusto TDS",
+  "Intensidad de Post-gusto TDS",
+  "Calidad de Post-gusto TDS",
+  "Post-gusto Dominante TDS",
+  "Refuerzos de Post-gusto TDS",
   "Duración Ataque TDS (s)",
   // Detailed TDS Metrics
   "Duración % TDS - Cacao", "Puntaje TDS - Cacao",

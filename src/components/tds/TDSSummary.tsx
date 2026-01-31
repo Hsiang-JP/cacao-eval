@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Check, RotateCcw, AlertTriangle, Sparkles, Wind, Trash2, Save } from 'lucide-react';
+import { RotateCcw, AlertTriangle, Sparkles, Wind } from 'lucide-react';
 import { TDSProfile, TDSAnalysisResult, TDSScoreResult } from '../../types';
 import { analyzeTDS, CORE_ATTRIBUTES, DEFECT_ATTRIBUTES } from '../../utils/tdsCalculator';
 import { getAttributeColor } from '../../utils/colors';
@@ -283,8 +283,7 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
             {/* Core Scores */}
             <div className="px-4 pb-2">
                 <h4 className="text-sm font-bold text-gray-600 uppercase mb-2">
-                    {language === 'es' ? 'Atributos Básicos' : 'Core Attributes'}
-                    {profile.mode === 'expert' && <span className="text-xs text-gray-400 font-normal ml-1">(aggregated)</span>}
+                    {language === 'es' ? 'Atributos Principales' : 'Core Attributes'}
                 </h4>
                 <div className="grid grid-cols-1 gap-1.5">
                     {sortedScores.filter(([id]) => CORE_ATTRIBUTES.includes(id)).map(([attrId, result]) => (
@@ -433,7 +432,7 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                     {hasFlaggedScores && (
                         <div className="flex items-center gap-2 text-amber-700 text-sm">
                             <AlertTriangle size={16} />
-                            <span>{language === 'es' ? 'Atributos básicos sin selección' : 'Core attributes not selected'}</span>
+                            <span>{language === 'es' ? 'Atributos principales sin selección' : 'Core attributes not selected'}</span>
                         </div>
                     )}
                     {hasDefects && (
@@ -451,21 +450,18 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                     onClick={onDiscard}
                     className="flex-1 bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-100 flex items-center justify-center gap-2"
                 >
-                    <Trash2 size={18} />
                     {language === 'es' ? 'Descartar' : 'Discard'}
                 </button>
                 <button
                     onClick={onSave}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
                 >
-                    <Save size={18} />
                     {language === 'es' ? 'Guardar' : 'Save'}
                 </button>
                 <button
                     onClick={handleApply}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
                 >
-                    <Check size={18} />
                     {language === 'es' ? 'Aplicar' : 'Apply'}
                 </button>
             </div>

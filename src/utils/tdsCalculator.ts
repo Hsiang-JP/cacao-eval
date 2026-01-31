@@ -359,46 +359,71 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
 
     if (mode === 'expert') {
         for (const coreAttr of CORE_ATTRIBUTES) {
-            // Aggregate durations first
-            const children = PARENT_CHILD_MAPPING[coreAttr] || [coreAttr];
-            let totalInMouth = 0;
-            let totalFinish = 0;
+            // 1. Calculate Score based ONLY on the Core Attribute itself (No summation)
+            const selfBody = zones.body.get(coreAttr) || 0;
+            const selfAttack = zones.attack.get(coreAttr) || 0;
+            const selfTotal = selfBody + selfAttack;
+
+            const durationPercent = swallowTime > 0 ? (selfTotal / swallowTime) * 100 : 0;
+            let score = mapDurationToScore(durationPercent, 'core');
+
+            // 2. Calculate Child Contribution for Recommendations
+            const children = PARENT_CHILD_MAPPING[coreAttr] || [];
+            let childContributionTotal = 0;
 
             for (const child of children) {
-                const zoneData = zones.body.get(child) || 0; // Body
-                const atkData = zones.attack.get(child) || 0; // Attack
-                const finData = zones.finish.get(child) || 0; // Finish
-                totalInMouth += zoneData + atkData;
-                totalFinish += finData;
+                if (child === coreAttr) continue; // Skip self
+                const cBody = zones.body.get(child) || 0;
+                const cAttack = zones.attack.get(child) || 0;
+                // We don't include finish for the "In-Mouth" contribution check, 
+                // but we might check it for comprehensive analysis if needed.
+                // For now, consistent with core score logic: Attack + Body.
+                childContributionTotal += cBody + cAttack;
             }
 
-            const durationPercent = swallowTime > 0 ? (totalInMouth / swallowTime) * 100 : 0;
-            let score = mapDurationToScore(durationPercent, 'core');
-            const originalScore = score;
-            let boostDetails: { amount: number; duration: number; type: 'individual' | 'aggregated' } | undefined = undefined;
+            const childPercent = swallowTime > 0 ? (childContributionTotal / swallowTime) * 100 : 0;
 
-            // Apply Boost Logic
+            let boostDetails: { amount: number; duration: number; type: 'individual' | 'aggregated' } | undefined = undefined;
+            let accumulatedBoost = 0;
+
+            // Boost Logic A: Significant Child Presence
+            // If children make up a significant portion, recommend boosting the parent score
+            if (childPercent > 10) accumulatedBoost += 1;
+            if (childPercent > 30) accumulatedBoost += 1; // +2 total if very high
+
+            // Boost Logic B: Aftertaste (Self + Children)
+            // Check total finish duration (Self + Children)
+            let totalFinish = zones.finish.get(coreAttr) || 0;
+            for (const child of children) {
+                if (child === coreAttr) continue;
+                totalFinish += zones.finish.get(child) || 0;
+            }
+
             if (finishDuration > 5 && totalFinish > 0) {
-                let accumulatedBoost = 0;
                 const finishPercent = (totalFinish / finishDuration) * 100;
                 if (totalFinish > 10) accumulatedBoost += 2;
-                else if (totalFinish > 5) accumulatedBoost += 1;
-                if (finishPercent > 50) accumulatedBoost += 1;
+                else if (totalFinish > 5) accumulatedBoost += 1; // Overlaps with logic A? No, this is finish specific.
 
-                if (accumulatedBoost > 0) {
-                    // Apply boost as recommendation ONLY
-                    boostDetails = {
-                        amount: accumulatedBoost,
-                        duration: Math.round(totalFinish * 10) / 10,
-                        type: 'aggregated'
-                    };
-                }
+                // Cap the finish-based boost part to avoid double counting if needed, 
+                // but usually these are distinct: "Complexity during tasting" vs "Long finish".
+                // Let's keep them additive but capped total? 
+                // User logic in previous code was: Finish > 10s (+2) OR > 5s (+1), AND Finish % > 50% (+1).
+
+                if (finishPercent > 50) accumulatedBoost += 1;
+            }
+
+            if (accumulatedBoost > 0) {
+                boostDetails = {
+                    amount: accumulatedBoost,
+                    duration: Math.round(childContributionTotal * 10) / 10, // Metrics for UI context
+                    type: 'aggregated'
+                };
             }
 
             coreScores.set(coreAttr, {
                 score,
                 durationPercent: Math.round(durationPercent * 10) / 10,
-                isFlagged: durationPercent === 0,
+                isFlagged: durationPercent === 0 && childPercent === 0, // Flag if NEITHER self nor children present
                 category: 'core',
                 originalScore: undefined,
                 boostDetails

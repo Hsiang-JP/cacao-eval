@@ -4,7 +4,7 @@ import { dbService, StoredSample } from '../services/dbService';
 import { getDateStringForFilename } from '../utils/dateUtils';
 import Header from '../components/Header';
 import { TRANSLATIONS } from '../constants';
-import { Plus, Search, Trash2, Calendar, User, FileText, CheckSquare, Square, BarChart2, Download, Upload } from 'lucide-react';
+import { Search, Trash2, Calendar, User, FileText, CheckSquare, Square, BarChart2, Upload, Download } from 'lucide-react';
 import SampleLibraryCard from '../components/samples/SampleLibraryCard';
 import Papa from 'papaparse';
 import { CSV_HEADERS_EN, CSV_HEADERS_ES } from '../constants';
@@ -270,14 +270,6 @@ const SamplesPage: React.FC = () => {
 
                     <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
 
-                        {/* Selection Count Indicator - Always visible to prevent layout shift */}
-                        <div className={`px-3 py-2 rounded-lg border text-sm font-bold flex items-center shadow-sm transition-all duration-300 ${selectedIds.size > 0
-                            ? 'bg-cacao-100 text-cacao-800 border-cacao-200'
-                            : 'bg-gray-50 text-gray-400 border-gray-100'
-                            }`}>
-                            {selectedIds.size} {language === 'es' ? 'Seleccionadas' : 'Selected'}
-                        </div>
-
                         <button
                             onClick={handleImportClick}
                             className="bg-white border border-cacao-200 text-cacao-700 font-bold py-2 px-3 rounded-lg shadow-sm hover:bg-cacao-50 transition-colors flex items-center justify-center gap-2"
@@ -292,6 +284,14 @@ const SamplesPage: React.FC = () => {
                         >
                             <Download size={20} />
                         </button>
+
+                        {/* Selection Count Indicator - Moved here */}
+                        <div className={`px-3 py-2 rounded-lg border text-sm font-bold flex items-center shadow-sm transition-all duration-300 ${selectedIds.size > 0
+                            ? 'bg-cacao-100 text-cacao-800 border-cacao-200'
+                            : 'bg-gray-50 text-gray-400 border-gray-100'
+                            }`}>
+                            {selectedIds.size} {language === 'es' ? 'Seleccionadas' : 'Selected'}
+                        </div>
 
                         <button
                             onClick={handleBulkPdf}
@@ -319,10 +319,9 @@ const SamplesPage: React.FC = () => {
 
                         <button
                             onClick={() => navigate('/evaluate')}
-                            className="bg-cacao-600 hover:bg-cacao-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2"
+                            className="bg-cacao-600 hover:bg-cacao-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center"
                         >
-                            <Plus size={20} />
-                            <span className="hidden sm:inline">{t.newEvaluation}</span>
+                            {t.newEvaluation}
                         </button>
                     </div>
                 </div>

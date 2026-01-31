@@ -7,7 +7,6 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Play, Coffee, StopCircle } from 'lucide-react';
 import { TDSMode, TDSEvent, TDSProfile } from '../../types';
 // import { detectInputMethod, InputMethod } from '../../utils/inputDetection';
 import { getAttributeColor } from '../../utils/colors';
@@ -224,7 +223,6 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-gray-800">
                 <div className="flex items-center gap-3">
-                    <Coffee className="w-6 h-6 text-amber-400" />
                     <h2 className="text-white font-bold text-lg">
                         {language === 'es' ? 'Perfil TDS' : 'TDS Profile'}
                         <span className="text-gray-400 text-sm ml-2">
@@ -234,10 +232,10 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                 </div>
                 <button
                     onClick={onCancel}
-                    className="text-gray-400 hover:text-white p-2"
+                    className="text-gray-400 hover:text-white p-2 font-bold"
                     aria-label="Close"
                 >
-                    <X size={24} />
+                    {language === 'es' ? 'Cerrar' : 'Close'}
                 </button>
             </div>
 
@@ -299,7 +297,6 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                             onClick={handleStart}
                             className="bg-green-600 hover:bg-green-700 text-white font-bold py-6 px-12 rounded-2xl text-2xl flex items-center gap-3 shadow-lg transition-all"
                         >
-                            <Play size={32} fill="currentColor" />
                             {language === 'es' ? 'Comenzar' : 'Start Tasting'}
                         </button>
                     </div>
@@ -364,7 +361,6 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                             onClick={handleSwallow}
                             className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
                         >
-                            <Coffee size={20} />
                             {language === 'es' ? 'Tragar' : 'Swallow'}
                         </button>
                     )}
@@ -372,7 +368,6 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                         onClick={handleFinish}
                         className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
                     >
-                        <StopCircle size={20} />
                         {language === 'es' ? 'Terminar' : 'Finish'}
                     </button>
                 </div>

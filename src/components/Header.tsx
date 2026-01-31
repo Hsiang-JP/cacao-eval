@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Award, Bean, FileText, X, Languages, ExternalLink, ImageOff, PenTool } from 'lucide-react';
+import { Languages } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import GuidelinesModal from './GuidelinesModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -27,8 +27,9 @@ const Header: React.FC = () => {
         <div className="w-full px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
 
           {/* Left: Logo & Title */}
+          {/* Left: Logo & Title */}
           <div className="flex items-center gap-3 flex-1">
-            <div className="flex-shrink-0 cursor-pointer" onClick={() => navigate('/evaluate')}>
+            <div className="flex-shrink-0">
               <img src="logo-cacao.svg" alt="Cacao flavor profiling Logo" className="h-12 w-auto" />
             </div>
             <div>
@@ -53,21 +54,21 @@ const Header: React.FC = () => {
               onClick={() => navigate('/evaluate')}
               className={`flex items-center gap-2 transition-colors ${location.pathname === '/evaluate' ? 'text-white font-bold' : 'text-cacao-200 hover:text-white'}`}
             >
-              <PenTool size={16} /> {t.evaluation}
+              {t.evaluation}
             </button>
 
             <button
               onClick={() => navigate('/samples')}
               className={`flex items-center gap-2 transition-colors ${location.pathname === '/samples' ? 'text-white font-bold' : 'text-cacao-200 hover:text-white'}`}
             >
-              <FileText size={16} /> {t.sampleLibrary}
+              {t.sampleLibrary}
             </button>
 
             <button
               onClick={() => setIsGuidelinesOpen(true)}
               className="flex items-center gap-2 text-cacao-200 hover:text-white transition-colors"
             >
-              <Award size={16} /> {t.guidelines}
+              {t.guidelines}
             </button>
           </div>
         </div>
