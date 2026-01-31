@@ -244,6 +244,15 @@ const SamplesPage: React.FC = () => {
         <div className="flex flex-col min-h-screen bg-cacao-50 text-gray-800 font-sans">
             <Header />
 
+            {/* Hidden File Input for CSV Import */}
+            <input
+                type="file"
+                id="csv-import-input"
+                accept=".csv"
+                className="hidden"
+                onChange={handleFileChange}
+            />
+
             <main className="w-full px-4 md:px-8 space-y-6 mb-8 flex-grow">
 
                 {/* Actions Bar */}
@@ -260,6 +269,15 @@ const SamplesPage: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
+
+                        {/* Selection Count Indicator - Always visible to prevent layout shift */}
+                        <div className={`px-3 py-2 rounded-lg border text-sm font-bold flex items-center shadow-sm transition-all duration-300 ${selectedIds.size > 0
+                            ? 'bg-cacao-100 text-cacao-800 border-cacao-200'
+                            : 'bg-gray-50 text-gray-400 border-gray-100'
+                            }`}>
+                            {selectedIds.size} {language === 'es' ? 'Seleccionadas' : 'Selected'}
+                        </div>
+
                         <button
                             onClick={handleImportClick}
                             className="bg-white border border-cacao-200 text-cacao-700 font-bold py-2 px-3 rounded-lg shadow-sm hover:bg-cacao-50 transition-colors flex items-center justify-center gap-2"
@@ -278,29 +296,25 @@ const SamplesPage: React.FC = () => {
                         <button
                             onClick={handleBulkPdf}
                             disabled={selectedIds.size === 0}
-                            className={`font-bold py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2 ${selectedIds.size === 0
+                            className={`font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center ${selectedIds.size === 0
                                 ? 'bg-amber-200 text-white cursor-not-allowed opacity-50'
                                 : 'bg-amber-600 hover:bg-amber-700 text-white'
                                 }`}
                             title={language === 'es' ? "Descargar PDF" : "Download PDF"}
                         >
-                            <FileText size={20} />
-                            <span className="hidden sm:inline">PDF</span>
-                            {selectedIds.size > 0 && <span>({selectedIds.size})</span>}
+                            PDF
                         </button>
 
                         <button
                             onClick={handleCompare}
                             disabled={selectedIds.size < 2}
-                            className={`font-bold py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2 ${selectedIds.size < 2
+                            className={`font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center ${selectedIds.size < 2
                                 ? 'bg-cacao-300 text-white cursor-not-allowed opacity-50'
                                 : 'bg-cacao-800 hover:bg-cacao-900 text-white'
                                 }`}
                             title={t.compare || "Compare"}
                         >
-                            <BarChart2 size={20} />
-                            <span className="hidden sm:inline">{t.compare || "Compare"}</span>
-                            {selectedIds.size > 0 && <span>({selectedIds.size})</span>}
+                            {t.compare || "Compare"}
                         </button>
 
                         <button

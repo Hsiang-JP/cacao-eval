@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Chart as ChartJS,
     RadialLinearScale,
@@ -23,6 +23,8 @@ ChartJS.register(
 
 interface ComparisonRadarProps {
     sessions: StoredSample[];
+    selectedIds?: string[];
+    onSelectionChange?: (ids: string[]) => void;
 }
 
 const ATTRIBUTE_ORDER = [
@@ -56,9 +58,28 @@ const COLORS = [
     { border: 'rgba(210, 99, 132, 1)', bg: 'rgba(210, 99, 132, 0.2)' }
 ];
 
-export const ComparisonRadar: React.FC<ComparisonRadarProps> = ({ sessions }) => {
+export const ComparisonRadar: React.FC<ComparisonRadarProps> = ({ sessions, selectedIds = [], onSelectionChange }) => {
     const { language } = useLanguage();
-    const [hoveredSession, setHoveredSession] = useState<StoredSample | null>(null);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const toggleSession = (id: string) => {
+        if (!onSelectionChange) return;
+        const newSelection = selectedIds.includes(id)
+            ? selectedIds.filter(sId => sId !== id)
+            : [...selectedIds, id];
+        onSelectionChange(newSelection);
+    };
+
+    const clearSelection = () => {
+        if (onSelectionChange) onSelectionChange([]);
+    };
 
     const getLabel = (id: string) => {
         let text = '';
@@ -108,13 +129,14 @@ export const ComparisonRadar: React.FC<ComparisonRadarProps> = ({ sessions }) =>
         labels: ATTRIBUTE_ORDER.map(id => getLabel(id)),
         datasets: sessions.map((session, index) => {
             const color = COLORS[index % COLORS.length];
-            const isHovered = hoveredSession?.id === session.id;
-            const isDimmed = hoveredSession && !isHovered;
+            const isSelected = selectedIds.includes(session.id);
+            const hasSelection = selectedIds.length > 0;
+            const isDimmed = hasSelection && !isSelected;
 
             // Base opacity
-            const bgAlpha = isDimmed ? 0.05 : (isHovered ? 0.4 : 0.2);
-            const borderAlpha = isDimmed ? 0.2 : (isHovered ? 1 : 1);
-            const borderWidth = isHovered ? 3 : (isDimmed ? 1 : 2);
+            const bgAlpha = isDimmed ? 0.05 : (isSelected ? 0.4 : 0.2);
+            const borderAlpha = isDimmed ? 0.1 : (isSelected ? 0.7 : 0.6);
+            const borderWidth = isSelected ? 3 : (isDimmed ? 1 : 2);
 
             return {
                 label: session.sampleCode,
@@ -124,13 +146,15 @@ export const ComparisonRadar: React.FC<ComparisonRadarProps> = ({ sessions }) =>
                 }),
                 backgroundColor: color.bg.replace(/[\d.]+\)$/, `${bgAlpha})`),
                 borderColor: color.border.replace(/[\d.]+\)$/, `${borderAlpha})`),
-                borderWidth: borderWidth,
+                borderWidth: isMobile ? (borderWidth * 0.7) : borderWidth,
+                pointRadius: 0,  // Hide data points
+                pointHoverRadius: 4,  // Show on hover only
                 pointBackgroundColor: color.border,
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
                 pointHoverBorderColor: color.border,
                 tension: 0.1,
-                order: isHovered ? 0 : 1
+                order: isSelected ? 0 : 1
             };
         }),
     };
@@ -141,7 +165,10 @@ export const ComparisonRadar: React.FC<ComparisonRadarProps> = ({ sessions }) =>
                 angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
                 grid: { color: 'rgba(0, 0, 0, 0.1)' },
                 pointLabels: {
-                    font: { size: 10, family: "'Inter', sans-serif" }, // Smaller font for consistency with labels
+                    font: {
+                        size: isMobile ? 8 : 10,
+                        family: "'Inter', sans-serif"
+                    },
                     color: '#4B5563',
                     // Allow multi-line labels
                     callback: (label: string | string[]) => label
@@ -196,25 +223,36 @@ export const ComparisonRadar: React.FC<ComparisonRadarProps> = ({ sessions }) =>
     return (
         <div className="flex flex-col">
             {/* Chart Area - Fixed height */}
-            <div className="h-[400px] md:h-[450px] relative p-4">
+            <div className={`relative ${isMobile ? 'h-[250px] p-0' : 'h-[400px] md:h-[450px] p-4'}`}>
                 <Radar data={data} options={options} />
+                <button
+                    onClick={clearSelection}
+                    disabled={selectedIds.length === 0}
+                    className={`absolute bottom-1 right-0 z-10 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${selectedIds.length > 0
+                        ? 'bg-white text-blue-600 border-blue-200 shadow-sm hover:bg-blue-50 cursor-pointer'
+                        : 'bg-transparent text-gray-300 border-transparent cursor-default'
+                        }`}
+                >
+                    {language === 'es'
+                        ? (isMobile ? 'Limpiar' : 'Limpiar Selección')
+                        : (isMobile ? 'Clear' : 'Clear Selection')}
+                </button>
             </div>
 
             {/* Interactive Legend - Always show all info, no layout shifts */}
             <div className="bg-white border-t border-gray-100 p-4">
+
                 <div className="flex flex-wrap gap-3 justify-center">
                     {sessions.map((session, index) => {
                         const color = COLORS[index % COLORS.length];
-                        const isHovered = hoveredSession?.id === session.id;
+                        const isSelected = selectedIds.includes(session.id);
 
                         return (
                             <div
                                 key={session.id}
-                                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all min-w-[120px] max-w-[150px] ${isHovered ? 'bg-gray-100 ring-2 ring-gray-300 shadow-sm' : 'hover:bg-gray-50'
+                                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all min-w-[120px] max-w-[150px] ${isSelected ? 'bg-gray-100 ring-2 ring-gray-300 shadow-sm' : 'hover:bg-gray-50'
                                     }`}
-                                onMouseEnter={() => setHoveredSession(session)}
-                                onMouseLeave={() => setHoveredSession(null)}
-                                onClick={() => setHoveredSession(session === hoveredSession ? null : session)}
+                                onClick={() => toggleSession(session.id)}
                             >
                                 <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color.border }}></span>
                                 <div className="flex flex-col overflow-hidden min-w-0">

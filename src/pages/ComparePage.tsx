@@ -26,6 +26,9 @@ const ComparePage: React.FC = () => {
     const [clusters, setClusters] = useState<ClusterResult[]>([]);
     const [analyzing, setAnalyzing] = useState(false);
 
+    // Selection State (for synchronized highlighting)
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
     // 1. Load Data
     useEffect(() => {
         const loadData = async () => {
@@ -207,12 +210,18 @@ const ComparePage: React.FC = () => {
                         {mode === 'simple' ? (
                             <div className="bg-white rounded-xl shadow-sm border border-cacao-100 flex flex-col">
                                 <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                                    <h3 className="font-bold text-gray-700">Flavor Profile Overlay</h3>
+                                    <h3 className="font-bold text-gray-700">
+                                        {language === 'es' ? 'Superposición de Perfiles de Sabor' : 'Flavor Profile Overlay'}
+                                    </h3>
                                 </div>
-                                <div className="p-4 min-h-[500px]">
+                                <div className="p-2 sm:p-4 min-h-[300px] sm:min-h-[500px]">
                                     {/* Note: ComparisonRadar needs to accept StoredSample or use mapping. 
                                         I will update ComparisonRadar next. */}
-                                    <ComparisonRadar sessions={sessions as any} />
+                                    <ComparisonRadar
+                                        sessions={sessions}
+                                        selectedIds={selectedIds}
+                                        onSelectionChange={setSelectedIds}
+                                    />
                                 </div>
                             </div>
                         ) : (
@@ -226,7 +235,17 @@ const ComparePage: React.FC = () => {
                                         Running clustering analysis...
                                     </div>
                                 ) : (
-                                    <ClusterResults clusters={clusters} sessions={sessions} />
+                                    <ClusterResults
+                                        clusters={clusters}
+                                        sessions={sessions}
+                                        selectedIds={selectedIds}
+                                        onSampleClick={(id) => {
+                                            // Optional: Allow clicking samples in cluster view to toggle selection
+                                            setSelectedIds(prev =>
+                                                prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+                                            );
+                                        }}
+                                    />
                                 )}
                             </div>
                         )}
@@ -249,6 +268,14 @@ const ComparePage: React.FC = () => {
                                             const s = sessions.find(sess => sess.id === id);
                                             return s ? s.sampleCode : id.substring(0, 4);
                                         })}
+                                        sampleIds={distanceData.sampleIds}
+                                        onCellClick={(id1, id2) => {
+                                            // Set selection to these two samples
+                                            setSelectedIds([id1, id2]);
+
+                                            // If in simple mode, we are good (radar updates)
+                                            // If in advanced mode, we stay there and highlight (cluster updates)
+                                        }}
                                     />
                                 </div>
                             </div>

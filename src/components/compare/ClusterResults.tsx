@@ -5,14 +5,16 @@ import { Layers, Users, Star, X } from 'lucide-react';
 import FlavorRadar from '../FlavorRadar';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../context/LanguageContext';
+import { ATTRIBUTE_LABELS } from '../../data/attributes';
 
 interface ClusterResultsProps {
     clusters: ClusterResult[];
     sessions: StoredSample[];
+    selectedIds?: string[];
     onSampleClick?: (sampleId: string) => void;
 }
 
-export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessions, onSampleClick }) => {
+export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessions, selectedIds = [], onSampleClick }) => {
     const { language } = useLanguage();
     // Helper for inline translations
     const t = (en: string, es: string) => language === 'es' ? es : en;
@@ -84,6 +86,33 @@ export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessio
         }
     };
 
+    // Helper to translate traits
+    const translateTrait = (traitKey: string) => {
+        // Strip any prefixes if they still exist (though service should have removed them)
+        const key = traitKey.replace('attr_', '');
+        return ATTRIBUTE_LABELS[key]?.[language] || traitKey.replace('_', ' ');
+    };
+
+    // Helper to format traits list
+    const formatTraits = (traits: string[]) => {
+        return traits.map(translateTrait).join(', ');
+    };
+
+    // Helper to Generate Localized Cluster Name
+    const getClusterName = (cluster: ClusterResult) => {
+        // If name contains '|', it means it's a list of keys we can translate
+        if (cluster.name.includes('|')) {
+            const keys = cluster.name.split('|');
+            const translated = keys.map(translateTrait);
+            return translated.join(' & ');
+        }
+        // Fallback for old data or "Group X"
+        if (cluster.name.startsWith('Group')) {
+            return cluster.name.replace('Group', t('Group', 'Grupo'));
+        }
+        return cluster.name;
+    };
+
     if (!clusters || clusters.length === 0) {
         return (
             <div className="p-8 text-center text-gray-500">
@@ -104,10 +133,12 @@ export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessio
                         <div>
                             <h3 className="font-bold text-cacao-900 text-lg flex items-center gap-2">
                                 <span className="bg-cacao-100 text-cacao-800 text-xs px-2 py-1 rounded-full">#{cluster.id}</span>
-                                {cluster.name}
+                                {getClusterName(cluster)}
                             </h3>
                             <p className="text-xs text-gray-500 mt-1">
-                                {cluster.dominantTraits.length > 0 ? `${t("Characterized by", "Caracterizado por")}: ${cluster.dominantTraits.join(', ')}` : t('Mixed Profile', 'Perfil Mixto')}
+                                {cluster.dominantTraits.length > 0
+                                    ? `${t("Characterized by", "Caracterizado por")}: ${formatTraits(cluster.dominantTraits)}`
+                                    : t('Mixed Profile', 'Perfil Mixto')}
                             </p>
                         </div>
                         <div className="text-right">
@@ -148,9 +179,12 @@ export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessio
                                         }}
                                         onMouseEnter={(e) => handleMouseEnter(sampleId, e.currentTarget)}
                                         onMouseLeave={handleMouseLeave}
-                                        className="relative"
-                                    >
-                                        <div className={`bg-gray-50 hover:bg-cacao-50 text-gray-700 hover:text-cacao-900 text-sm py-2 px-3 rounded border cursor-pointer transition-colors text-center truncate ${isActive ? 'bg-cacao-100 border-cacao-300 ring-2 ring-cacao-200' : 'border-gray-100'
+                                        className={`relative`}>
+                                        <div className={`text-sm py-2 px-3 rounded border cursor-pointer transition-all text-center truncate ${isActive
+                                            ? 'bg-cacao-100 border-cacao-300 ring-2 ring-cacao-200 text-cacao-900 font-bold'
+                                            : selectedIds.includes(sampleId)
+                                                ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-400 text-blue-900 font-bold shadow-md transform scale-105 z-10'
+                                                : 'bg-gray-50 hover:bg-cacao-50 text-gray-700 hover:text-cacao-900 border-gray-100'
                                             }`}>
                                             {code}
                                         </div>

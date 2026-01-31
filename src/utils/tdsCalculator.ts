@@ -327,17 +327,12 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
             if (finishPercent > 50) accumulatedBoost += 1;
 
             if (accumulatedBoost > 0) {
-                // Apply boost
-                score = Math.min(10, score + accumulatedBoost);
-
-                // Only mark as boosted if it actually changed
-                if (score > originalScore) {
-                    boostDetails = {
-                        amount: accumulatedBoost,
-                        duration: Math.round(finishTime * 10) / 10,
-                        type: 'individual'
-                    };
-                }
+                // Apply boost as recommendation ONLY (Do not modify score)
+                boostDetails = {
+                    amount: accumulatedBoost,
+                    duration: Math.round(finishTime * 10) / 10,
+                    type: 'individual'
+                };
             }
         }
 
@@ -346,7 +341,7 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
             durationPercent: Math.round(durationPercent * 10) / 10,
             isFlagged: isCore && durationPercent === 0,
             category,
-            originalScore: originalScore !== score ? originalScore : undefined,
+            originalScore: undefined,
             boostDetails,
             zoneBreakdown: {
                 attack: attackDuration > 0 ? Math.round((attackTime / attackDuration) * 1000) / 10 : 0,
@@ -391,14 +386,12 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
                 if (finishPercent > 50) accumulatedBoost += 1;
 
                 if (accumulatedBoost > 0) {
-                    score = Math.min(10, score + accumulatedBoost);
-                    if (score > originalScore) {
-                        boostDetails = {
-                            amount: accumulatedBoost,
-                            duration: Math.round(totalFinish * 10) / 10,
-                            type: 'aggregated'
-                        };
-                    }
+                    // Apply boost as recommendation ONLY
+                    boostDetails = {
+                        amount: accumulatedBoost,
+                        duration: Math.round(totalFinish * 10) / 10,
+                        type: 'aggregated'
+                    };
                 }
             }
 
@@ -407,7 +400,7 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
                 durationPercent: Math.round(durationPercent * 10) / 10,
                 isFlagged: durationPercent === 0,
                 category: 'core',
-                originalScore: originalScore !== score ? originalScore : undefined,
+                originalScore: undefined,
                 boostDetails
             });
         }
@@ -492,12 +485,84 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. Global Quality Modifier
+    // 6. Global Quality Modifier & Recommendation System
     // -------------------------------------------------------------------------
     let qualityModifier = 0;
     if (aftertasteQuality === 'positive') qualityModifier += 0.5; // Lingering pleasant or Clean
     if (aftertasteQuality === 'negative') qualityModifier -= 1.5; // Punish lingering negative
     if (aromaIntensity >= 7) qualityModifier += 0.5;
+
+    // Recommendation System: Initial Kick (0-20%)
+    const kickSuggestions: string[] = [];
+    const kickThreshold = attackDuration * 0.5; // 50% of zone 1
+
+    if (zones.attack.size > 0) {
+        // Logic 1: Acidity -> Fresh Fruit
+        if ((zones.attack.get('acidity') || 0) > kickThreshold) {
+            kickSuggestions.push("High acidity in the attack often indicates Fruit notes. Did you perceive Citrus (Lemon/Lime) or Berry?");
+        }
+        // Logic 2: Bitterness -> Vegetal or Roast
+        if ((zones.attack.get('bitterness') || 0) > kickThreshold) {
+            kickSuggestions.push("Strong early bitterness can indicate 'Green/Vegetal' notes (if raw) or 'Coffee/Burnt' notes (if roasted). Check these categories.");
+        }
+        // Logic 3: Astringency -> Nutty or Unripe Fruit
+        // For astringency, user said "if Dominant", let's use the threshold too for consistency
+        if ((zones.attack.get('astringency') || 0) > kickThreshold) {
+            kickSuggestions.push("Sharp astringency often comes from 'Nut Skins' or 'Unripe Fruit'. Consider adding these to the profile.");
+        }
+        // Logic 4: Floral -> Spice or Wood
+        // Floral is complementary, so we check if it has significant presence (e.g. > 10% of zone)
+        if ((zones.attack.get('floral') || 0) > (attackDuration * 0.1)) {
+            kickSuggestions.push("Floral notes often carry subtle 'Spicy' (Coriander) or 'Light Wood' nuances. Did you perceive them?");
+        }
+        // Logic 5: Sweetness -> Caramel/Vanilla (if high cacao?)
+        // We lack 'Sugar %' data here. Assuming high Cacao context given the app usage.
+        if ((zones.attack.get('sweetness') || 0) > kickThreshold) {
+            kickSuggestions.push("Sweetness in dark chocolate is often aromatic. Check for 'Caramel/Panela', 'Malt', or 'Vanilla'.");
+        }
+    }
+
+    // Recommendation System: Aftertaste Quality (> 100%)
+    const qualitySuggestions: string[] = [];
+
+    // Helper to check presence in aftertaste
+    const hasFinish = (id: string) => (zones.finish.get(id) || 0) > 0;
+    const isFinishDominant = (id: string) => (zones.finish.get(id) || 0) > (finishDuration * 0.3); // >30% dominance
+
+    // A. Low Quality Indicators
+    if (isFinishDominant('vegetal') && (hasFinish('defects') || hasFinish('earthy') || hasFinish('moldy'))) {
+        // Earthy/Moldy finish (mapped slightly loosely as 'vegetal' often captures earthy in simple mode)
+        // In Expert mode, 'vegetal' parent might hide 'earthy'.
+        // Let's rely on specific attributes if available, or broad category combinations.
+        // Note: User specified "Earthy + Musty/Moldy".
+        // Simply checking for 'defects' content or specific notes if we had them.
+        // Assuming 'defects' covers Musty/Moldy/Dirty.
+        qualitySuggestions.push("Dirty/Earthy finish detected (potential defect). Suggest Global Quality < 4.");
+    }
+
+    // Hammy/Smoky -> defects
+    // If 'defects' is dominant in finish, it's generally bad.
+    if (isFinishDominant('defects')) {
+        qualitySuggestions.push("Defect detected in finish (Smoky/Hammy/etc). Suggest lowering Global Quality.");
+    }
+
+    // Rancid: Sour + Bitter (no Fruit)
+    if (hasFinish('acidity') && hasFinish('bitterness') && !hasFinish('fresh_fruit') && !hasFinish('browned_fruit')) {
+        if ((zones.finish.get('acidity')! + zones.finish.get('bitterness')!) > (finishDuration * 0.5)) {
+            qualitySuggestions.push("Unbalanced, harsh finish (Sour+Bitter without Fruit). Suggest Low Quality.");
+        }
+    }
+
+    // B. High Quality Indicators
+    // Complex: Fruit + Acid + Sweet
+    if (hasFinish('fresh_fruit') && hasFinish('acidity') && hasFinish('sweetness')) {
+        qualitySuggestions.push("Bright, complex finish detected (Fruit+Acid+Sweet). Suggest Global Quality 8–10.");
+    }
+
+    // Fine Cacao Base: Cocoa + Nutty + Woody
+    if (hasFinish('cacao') && hasFinish('nutty') && (hasFinish('woody') || hasFinish('spice'))) {
+        qualitySuggestions.push("Solid, comforting cacao base (Cocoa+Nutty+Woody). Suggest Global Quality 7–9.");
+    }
 
     // Collect aftertaste boosts from scores
     const aftertasteBoosts: { attrId: string; amount: number }[] = [];
@@ -522,6 +587,8 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
         aftertasteQuality,
         dominantAftertaste: dominantFinishAttr,
         aftertasteBoosts,
+        kickSuggestions,
+        qualitySuggestions,
         qualityModifier,
         firstOnset: startTime,
         attackPhaseDuration: attackDuration,
@@ -533,37 +600,9 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
 // LEGACY COMPATIBILITY
 // ============================================================================
 
-/**
- * Simple score calculation (legacy interface).
- * Returns Map of attrId -> TDSScoreResult
- */
-export const calculateScores = (profile: TDSProfile): Map<string, TDSScoreResult> => {
-    const analysis = analyzeTDS(profile);
 
-    // For Expert mode, merge individual scores with aggregated Core scores
-    if (profile.mode === 'expert') {
-        const merged = new Map(analysis.scores);
-        // Core scores take precedence (aggregated values)
-        for (const [attrId, result] of analysis.coreScores) {
-            merged.set(attrId, result);
-        }
-        return merged;
-    }
 
-    return analysis.scores;
-};
 
-/**
- * Aggregate durations for CSV export.
- */
-export const aggregateDurations = (events: TDSEvent[]): Map<string, number> => {
-    const durations = new Map<string, number>();
-    for (const event of events) {
-        const duration = event.end - event.start;
-        durations.set(event.attrId, (durations.get(event.attrId) || 0) + duration);
-    }
-    return durations;
-};
 
 /**
  * Apply TDS scores to attributes.
@@ -581,30 +620,9 @@ export const applyTDSScoresToAttributes = (
     });
 };
 
-/**
- * Calculate Duration % for each attribute (legacy).
- */
-export const calculateDurationPercentages = (
-    events: TDSEvent[],
-    totalDuration: number
-): Map<string, number> => {
-    const durations = aggregateDurations(events);
-    const percentages = new Map<string, number>();
 
-    for (const [attrId, totalTime] of durations) {
-        const percentage = totalDuration > 0 ? (totalTime / totalDuration) * 100 : 0;
-        percentages.set(attrId, Math.round(percentage * 10) / 10);
-    }
 
-    return percentages;
-};
 
-/**
- * Serialize TDS events to JSON.
- */
-export const serializeEventsToJSON = (events: TDSEvent[]): string => {
-    return JSON.stringify(events);
-};
 
 /**
  * Parse TDS events from JSON.

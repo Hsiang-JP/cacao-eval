@@ -23,24 +23,7 @@ const ALL_ATTRIBUTES = [
     'woody', 'spice', 'nutty', 'caramel', 'sweetness', 'defects'
 ];
 
-// Attribute labels
-const ATTRIBUTE_LABELS: Record<string, { en: string; es: string }> = {
-    cacao: { en: 'Cacao', es: 'Cacao' },
-    acidity: { en: 'Acidity', es: 'Acidez' },
-    bitterness: { en: 'Bitterness', es: 'Amargor' },
-    astringency: { en: 'Astringency', es: 'Astringencia' },
-    roast: { en: 'Roast', es: 'Tostado' },
-    fresh_fruit: { en: 'Fresh Fruit', es: 'Fruta Fresca' },
-    browned_fruit: { en: 'Browned Fruit', es: 'Fruta Marrón' },
-    vegetal: { en: 'Vegetal', es: 'Vegetal' },
-    floral: { en: 'Floral', es: 'Floral' },
-    woody: { en: 'Woody', es: 'Madera' },
-    spice: { en: 'Spice', es: 'Especia' },
-    nutty: { en: 'Nutty', es: 'Nuez' },
-    caramel: { en: 'Caramel', es: 'Caramelo' },
-    sweetness: { en: 'Sweetness', es: 'Dulzor' },
-    defects: { en: 'Defects', es: 'Defectos' },
-};
+import { ATTRIBUTE_LABELS } from '../../data/attributes';
 
 type TDSState = 'idle' | 'tasting' | 'swallowed' | 'finished';
 

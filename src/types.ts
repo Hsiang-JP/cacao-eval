@@ -91,6 +91,8 @@ export interface TDSAnalysisResult {
   aftertasteQuality: 'positive' | 'neutral' | 'negative';
   dominantAftertaste: string | null; // The dominant flavor in the aftertaste phase
   aftertasteBoosts: { attrId: string; amount: number }[]; // Attributes boosted due to aftertaste presence
+  kickSuggestions: string[]; // Suggestions based on initial kick (0-20%)
+  qualitySuggestions: string[]; // Suggestions based on aftertaste quality
   qualityModifier: number;
   firstOnset: number;
   attackPhaseDuration: number;

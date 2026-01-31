@@ -326,20 +326,21 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
         }
       }
 
-      // 1. Stats Row 1: Duration, Swallow, Mode
+      // 1. Stats Row 1: Duration, Swallow (actual), Mode
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(0, 0, 0);
 
       const durationLabel = t("Total Duration", "Duración Total");
-      const swallowLabel = t("Swallow Time", "Tiempo de Tragado");
+      const swallowLabel = t("Swallow", "Tragado");
       const modeLabel = t("Mode", "Modo");
 
       const modeText = tds.mode === 'expert' ? (isEs ? 'Experto' : 'Expert') : (isEs ? 'Normal' : 'Normal');
-      const safeSwallow = analysis?.adjustedSwallowTime ?? tds.swallowTime;
+      // Use actual swallow time (not adjusted)
+      const actualSwallow = tds.swallowTime;
 
       doc.text(`${durationLabel}: ${tds.totalDuration.toFixed(1)}s`, 14, currentY);
-      doc.text(`${swallowLabel}: ${safeSwallow.toFixed(1)}s`, 80, currentY);
+      doc.text(`${swallowLabel}: ${actualSwallow.toFixed(1)}s`, 80, currentY);
       doc.text(`${modeLabel}: ${modeText}`, 150, currentY);
 
       currentY += 6;
@@ -347,7 +348,7 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
       // Stats Row 2: First Flavor Onset, Aftertaste Duration
       if (analysis) {
         const firstOnset = analysis.firstOnset || 0;
-        const aftertasteDuration = tds.totalDuration - tds.swallowTime;
+        const aftertasteDuration = tds.totalDuration - actualSwallow;
 
         const onsetLabel = t("First Flavor Onset", "Primer Sabor");
         const aftertasteLabel = t("Aftertaste Duration", "Duración Retrogusto");
@@ -356,28 +357,32 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
         doc.text(`${aftertasteLabel}: ${aftertasteDuration.toFixed(1)}s`, 80, currentY);
       }
 
-      currentY += 6;
-
-      // Stats Row 3: Quality Adjustment Note (if applicable)
-      if (analysis && analysis.qualityModifier !== 0) {
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "italic");
-        const modSign = analysis.qualityModifier > 0 ? '+' : '';
-        const adjustmentNote = t(
-          `Suggested Global Quality Adjustment: ${modSign}${analysis.qualityModifier}`,
-          `Ajuste de Calidad Global Sugerido: ${modSign}${analysis.qualityModifier}`
-        );
-        doc.text(adjustmentNote, 14, currentY);
-        currentY += 6;
-      }
-
-      currentY += 6;
+      currentY += 12;
 
       // 2. Timeline Visualization
       const timelineX = 14;
       const timelineW = 180;
       const timelineH = 20;
       const scale = timelineW / (tds.totalDuration || 1);
+
+      // Calculate key positions
+      const firstOnset = analysis?.firstOnset || 0;
+      const attackEnd = firstOnset + (analysis?.attackPhaseDuration || 0);
+      const swallow = actualSwallow;
+      const total = tds.totalDuration;
+
+      const firstOnsetX = timelineX + (firstOnset * scale);
+      const attackEndX = timelineX + (attackEnd * scale);
+      const swallowX = timelineX + (swallow * scale);
+
+      // TOP ROW: Percentages (above timeline)
+      doc.setFontSize(7);
+      doc.setTextColor(80);
+      doc.text('0%', firstOnsetX, currentY - 6, { align: 'center' });
+      doc.text('20%', attackEndX, currentY - 6, { align: 'center' });
+      doc.setFont("helvetica", "bold");
+      doc.text('100%', swallowX, currentY - 6, { align: 'center' });
+      doc.setFont("helvetica", "normal");
 
       // Timeline Background
       doc.setDrawColor(200);
@@ -394,30 +399,34 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
         doc.rect(x, currentY, w, timelineH, 'F');
       });
 
-      // Swallow Marker
-      if (tds.swallowTime > 0) {
-        const swallowX = timelineX + (tds.swallowTime * scale);
-        doc.setDrawColor(0);
-        doc.setLineWidth(0.5);
-        doc.line(swallowX, currentY - 2, swallowX, currentY + timelineH + 2);
-        doc.setFontSize(8);
-        doc.setTextColor(50);
-        doc.text(t("Swallow", "Tragar"), swallowX - 5, currentY - 3);
-      }
-
-      // Attack Phase End Marker
+      // Attack End Marker (dashed line)
       if (analysis && analysis.attackPhaseDuration > 0) {
-        const attackEndAbs = analysis.firstOnset + analysis.attackPhaseDuration;
-        const attackX = timelineX + (attackEndAbs * scale);
         doc.setDrawColor(100);
         doc.setLineWidth(0.5);
-        doc.line(attackX, currentY - 2, attackX, currentY + timelineH + 2);
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text(t("Attack End", "Fin Ataque"), attackX - 5, currentY - 3);
+        doc.setLineDashPattern([1, 1], 0);
+        doc.line(attackEndX, currentY - 2, attackEndX, currentY + timelineH + 2);
+        doc.setLineDashPattern([], 0);
       }
 
-      currentY += timelineH + 10;
+      // Swallow Marker (solid line)
+      if (swallow > 0) {
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.8);
+        doc.line(swallowX, currentY - 2, swallowX, currentY + timelineH + 2);
+      }
+
+      // BOTTOM ROW: Times (below timeline)
+      currentY += timelineH;
+      doc.setFontSize(7);
+      doc.setTextColor(80);
+      doc.text(`${firstOnset.toFixed(1)}s`, firstOnsetX, currentY + 5, { align: 'center' });
+      doc.text(`${attackEnd.toFixed(1)}s`, attackEndX, currentY + 5, { align: 'center' });
+      doc.setFont("helvetica", "bold");
+      doc.text(`${swallow.toFixed(1)}s`, swallowX, currentY + 5, { align: 'center' });
+      doc.setFont("helvetica", "normal");
+      doc.text(`${total.toFixed(0)}s`, timelineX + timelineW, currentY + 5, { align: 'right' });
+
+      currentY += 15;
 
       // 3. Detailed TDS Data Table
       if (analysis && analysis.scores) {
@@ -554,6 +563,27 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
             })
             .join(', ');
           addTextSection(t("Aftertaste Boosts", "Refuerzos de Retrogusto"), boostText);
+        }
+
+        // 6. Quality Adjustment (moved to bottom)
+        if (analysis.qualityModifier !== 0) {
+          const modSign = analysis.qualityModifier > 0 ? '+' : '';
+          addTextSection(
+            t("Suggested Global Quality Adjustment", "Ajuste de Calidad Global Sugerido"),
+            `${modSign}${analysis.qualityModifier}`
+          );
+        }
+
+        // 7. Kick Suggestions
+        if (analysis.kickSuggestions && analysis.kickSuggestions.length > 0) {
+          const kickText = analysis.kickSuggestions.join('\n');
+          addTextSection(t("Initial Kick Insights", "Observaciones del Impacto Inicial"), kickText);
+        }
+
+        // 8. Quality Suggestions
+        if (analysis.qualitySuggestions && analysis.qualitySuggestions.length > 0) {
+          const qualityText = analysis.qualitySuggestions.join('\n');
+          addTextSection(t("Aftertaste Quality Insights", "Observaciones de Calidad del Retrogusto"), qualityText);
         }
       }
     }

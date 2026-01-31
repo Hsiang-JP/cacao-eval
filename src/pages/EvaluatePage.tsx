@@ -10,7 +10,7 @@ import TDSProfilerModal from '../components/tds/TDSProfilerModal';
 import TDSSummary from '../components/tds/TDSSummary';
 import TDSModeSelector from '../components/tds/TDSModeSelector';
 import { GradingSession, SampleMetadata, QualityAttribute, SubAttribute, TDSMode, TDSProfile, TDSScoreResult, TDSAnalysisResult } from '../types';
-import { applyTDSScoresToAttributes } from '../utils/tdsCalculator';
+import { applyTDSScoresToAttributes, analyzeTDS } from '../utils/tdsCalculator';
 import {
   INITIAL_ATTRIBUTES,
   INITIAL_QUALITY_ATTRIBUTES,
@@ -445,10 +445,14 @@ const EvaluatePage: React.FC = () => {
   };
 
   const handleTDSSave = () => {
-    // Save profile to session but DO NOT update attribute scores (sliders)
+    // Save profile to session WITH analysis persisted for PDF export
+    // This ensures PDF reads from DB instead of recalculating
+    const analysisToSave = tdsProfile ? analyzeTDS(tdsProfile) : undefined;
+    const updatedProfile = tdsProfile ? { ...tdsProfile, analysis: analysisToSave } : undefined;
+
     setSession(prev => ({
       ...prev,
-      tdsProfile: tdsProfile || undefined
+      tdsProfile: updatedProfile
     }));
     setShowTDSSummary(false);
     setIsEvaluationStarted(true);

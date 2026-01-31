@@ -102,17 +102,26 @@ export function calculateDistanceMatrix(samples: StoredSample[]): DistanceResult
         }
     }
 
-    // Calculate Absolute Similarity
+    // Calculate Similarity using Gaussian Kernel (RBF)
+    // Formula: Similarity(%) = 100 × e^(-distance²/(2σ²))
+    // σ = 5.0 is tuned for sensory data:
+    //   - distance 0.0 → 100% (identical)
+    //   - distance 2.5 → ~88% (very close)
+    //   - distance 5.0 → ~60% (distinct)
+    //   - distance 7.5 → ~32% (different)
+    //   - distance 10.0 → ~13% (unrelated)
+    const SIGMA = 5.0;
+    const TWO_SIGMA_SQ = 2 * SIGMA * SIGMA; // Pre-calculate: 50
+
     for (let i = 0; i < n; i++) {
         for (let j = 0; j < n; j++) {
             if (i === j) {
                 simMatrix[i][j] = 100;
             } else {
                 const d = distMatrix[i][j];
-                // Normalize against the theoretical maximum possible distance
-                // limiting to 0 in case of float weirdness (though shouldn't happen)
-                const sim = 100 * (1 - (d / MAX_THEORETICAL_DISTANCE));
-                simMatrix[i][j] = Math.max(0, Math.round(sim));
+                // Gaussian kernel: 100 * e^(-d²/(2σ²))
+                const sim = 100 * Math.exp(-(d * d) / TWO_SIGMA_SQ);
+                simMatrix[i][j] = Math.round(sim);
             }
         }
     }
@@ -127,66 +136,45 @@ export function calculateDistanceMatrix(samples: StoredSample[]): DistanceResult
 
 
 // ---------------------------------------------------------------------------
-// 4. CLUSTERING ENGINE
+// 4. CLUSTERING ENGINE (Affinity Propagation)
 // ---------------------------------------------------------------------------
-export async function performClustering(samples: StoredSample[], distanceResult?: DistanceResult): Promise<ClusterResult[]> {
+import { runAffinityPropagation } from '../utils/affinityPropagation';
+
+export interface ClusterResultWithExemplar extends ClusterResult {
+    exemplarCode: string; // The sample code of the exemplar (representative)
+    exemplarId: string;   // The ID of the exemplar
+}
+
+export async function performClustering(samples: StoredSample[], distanceResult?: DistanceResult): Promise<ClusterResultWithExemplar[]> {
     if (samples.length < 2) return [];
 
     const distData = distanceResult || calculateDistanceMatrix(samples);
 
-    // Dynamic import to prevent load-time crashes if library differs in environment
-    // Use try-catch to handle potential module loading errors
-    let agnes;
-    try {
-        const module = await import('ml-hclust');
-        agnes = module.agnes;
-    } catch (e) {
-        console.error("Failed to load clustering library (ml-hclust)", e);
-        return []; // Graceful degradation
-    }
+    // Use Affinity Propagation with similarity matrix (not distance!)
+    // AP natively works with similarity, which is perfect for Gaussian Kernel output.
+    const apResult = runAffinityPropagation(distData.similarityMatrix);
 
-    // Create cluster tree using Ward's method
-    const tree = agnes(distData.matrix, { method: 'ward' });
+    // Build results from AP output
+    const results: ClusterResultWithExemplar[] = [];
 
-    // Dynamic Cut: 
-    // Simple heuristic based on dataset size for MVP
-    // Ideally use gap statistic or silhouette score
-    let k = 2;
-    const N = samples.length;
-    if (N >= 15) k = 4;
-    else if (N >= 8) k = 3;
+    apResult.exemplars.forEach((exemplarIdx, clusterIndex) => {
+        const memberIndices = apResult.exemplarMap.get(exemplarIdx) || [];
+        const clusterSamples = memberIndices.map(i => samples[i]);
+        const exemplarSample = samples[exemplarIdx];
 
-    // Use library's grouping feature
-    // ml-hclust group(k) returns a Cluster object where children are subgroups
-    const clusterGroup = tree.group(k);
-
-    // Extract separate clusters from the root group
-    // Adjust based on library return structure. Assuming standard ml-hclust behavior:
-    // group(k) returns the root node of the cut subtree. Its children are the clusters.
-    const clusters = clusterGroup.children || [clusterGroup];
-
-    return clusters.map((clusterNode: any, index: number) => {
-        // Traverse to find all leaf indices belonging to this cluster
-        const indices = getLeafIndices(clusterNode);
-        const uniqueIndices = Array.from(new Set(indices)); // Dedup just in case
-
-        const clusterSamples = uniqueIndices.map(i => samples[i]);
-
-        // Calculate simple average stats
+        // Calculate simple average quality
         const avgQ = clusterSamples.reduce((sum, s) => sum + s.globalQuality, 0) / (clusterSamples.length || 1);
 
         // Identify dominant traits (simplified)
-        // Find attributes that > 50% of samples have score > 4
+        // Find attributes that > 50% of samples have score > 3
         const traitCounts: Record<string, number> = {};
         clusterSamples.forEach(sample => {
-            if (sample.globalQuality > 7) traitCounts['High Quality'] = (traitCounts['High Quality'] || 0) + 1;
-
             sample.attributes.forEach(attr => {
                 // Check if it's a "defining" flavor (e.g., > 3 intensity)
                 if (attr.score >= 3 && !['cacao', 'bitterness', 'astringency'].includes(attr.id.replace('attr_', ''))) {
                     // Exclude base flavors to find nuances
-                    const name = attr.id.replace('attr_', '').replace('_', ' ');
-                    traitCounts[name] = (traitCounts[name] || 0) + 1;
+                    const key = attr.id.replace('attr_', '');
+                    traitCounts[key] = (traitCounts[key] || 0) + 1;
                 }
             });
         });
@@ -197,35 +185,23 @@ export async function performClustering(samples: StoredSample[], distanceResult?
             .slice(0, 2)
             .map(([name]) => name);
 
-        // Generate Name
+        // Generate Name (Using keys, UI will translate)
         const groupName = sortedTraits.length > 0
-            ? toTitleCase(sortedTraits.join(' & '))
-            : `Group ${index + 1}`;
+            ? sortedTraits.join('|') // Use separator for UI parsing
+            : `Group ${clusterIndex + 1}`;
 
-        return {
-            id: index + 1,
+        results.push({
+            id: clusterIndex + 1,
             name: groupName,
             sampleCodes: clusterSamples.map(s => s.sampleCode),
             sampleIds: clusterSamples.map(s => s.id),
             avgQuality: Number(avgQ.toFixed(1)),
-            dominantTraits: sortedTraits
-        };
-    });
-}
-
-function getLeafIndices(node: any): number[] {
-    if (!node) return [];
-    if (node.isLeaf) return [node.index];
-
-    let indices: number[] = [];
-    if (node.children) {
-        node.children.forEach((child: any) => {
-            indices = indices.concat(getLeafIndices(child));
+            dominantTraits: sortedTraits,
+            exemplarCode: exemplarSample.sampleCode,
+            exemplarId: exemplarSample.id
         });
-    }
-    return indices;
+    });
+
+    return results;
 }
 
-function toTitleCase(str: string): string {
-    return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-}
