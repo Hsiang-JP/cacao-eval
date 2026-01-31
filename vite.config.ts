@@ -40,6 +40,9 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': '/src'
       }
+    },
+    server: {
+      host: true
     }
   };
 });

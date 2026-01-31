@@ -11,15 +11,20 @@
   "dependencies": {
     "@types/papaparse": "^5.5.2",
     "@types/react-router-dom": "^5.3.3",
+    "apexcharts": "^5.3.6",
     "chart.js": "^4.4.2",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
     "lucide-react": "^0.475.0",
+    "ml-hclust": "^4.0.0",
+    "ml-matrix": "^6.12.1",
     "papaparse": "^5.5.3",
     "react": "^19.2.1",
+    "react-apexcharts": "^1.9.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.2.1",
-    "react-router-dom": "^7.13.0"
+    "react-router-dom": "^7.13.0",
+    "recharts": "^3.7.0"
   },
   "overrides": {
     "react": "$react",

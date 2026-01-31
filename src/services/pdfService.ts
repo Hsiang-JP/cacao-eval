@@ -4,6 +4,7 @@ import { GradingSession, FlavorAttribute } from '../types';
 import { Chart, registerables } from 'chart.js';
 import { INITIAL_QUALITY_ATTRIBUTES } from '../constants';
 import { getAttributeColor } from '../utils/colors';
+import { analyzeTDS } from '../utils/tdsCalculator';
 import { formatDateForDisplay, getDateStringForFilename } from '../utils/dateUtils';
 
 // Register Chart.js components for dynamic generation
@@ -299,6 +300,264 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
     addTextSection(t("Judge's Notes", "Notas del Juez"), session.metadata.notes);
     addTextSection(t("Producer Recommendations", "Recomendaciones al Productor"), session.metadata.producerRecommendations);
 
+    // TDS Analysis Section
+    if (session.tdsProfile && session.tdsProfile.events?.length > 0) {
+      if (currentY > 230) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      currentY += 10;
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(74, 46, 36);
+      doc.text(t("TDS Analysis", "Análisis TDS"), 14, currentY);
+      currentY += 8;
+
+      const tds = session.tdsProfile;
+
+      // Calculate Analysis or use persisted
+      let analysis = session.tdsProfile.analysis;
+      if (!analysis) {
+        try {
+          analysis = analyzeTDS(tds);
+        } catch (e) {
+          console.error("TDS Analysis failed for PDF", e);
+        }
+      }
+
+      // 1. Stats Row 1: Duration, Swallow, Mode
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+
+      const durationLabel = t("Total Duration", "Duración Total");
+      const swallowLabel = t("Swallow Time", "Tiempo de Tragado");
+      const modeLabel = t("Mode", "Modo");
+
+      const modeText = tds.mode === 'expert' ? (isEs ? 'Experto' : 'Expert') : (isEs ? 'Normal' : 'Normal');
+      const safeSwallow = analysis?.adjustedSwallowTime ?? tds.swallowTime;
+
+      doc.text(`${durationLabel}: ${tds.totalDuration.toFixed(1)}s`, 14, currentY);
+      doc.text(`${swallowLabel}: ${safeSwallow.toFixed(1)}s`, 80, currentY);
+      doc.text(`${modeLabel}: ${modeText}`, 150, currentY);
+
+      currentY += 6;
+
+      // Stats Row 2: First Flavor Onset, Aftertaste Duration
+      if (analysis) {
+        const firstOnset = analysis.firstOnset || 0;
+        const aftertasteDuration = tds.totalDuration - tds.swallowTime;
+
+        const onsetLabel = t("First Flavor Onset", "Primer Sabor");
+        const aftertasteLabel = t("Aftertaste Duration", "Duración Retrogusto");
+
+        doc.text(`${onsetLabel}: ${firstOnset.toFixed(1)}s`, 14, currentY);
+        doc.text(`${aftertasteLabel}: ${aftertasteDuration.toFixed(1)}s`, 80, currentY);
+      }
+
+      currentY += 6;
+
+      // Stats Row 3: Quality Adjustment Note (if applicable)
+      if (analysis && analysis.qualityModifier !== 0) {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "italic");
+        const modSign = analysis.qualityModifier > 0 ? '+' : '';
+        const adjustmentNote = t(
+          `Suggested Global Quality Adjustment: ${modSign}${analysis.qualityModifier}`,
+          `Ajuste de Calidad Global Sugerido: ${modSign}${analysis.qualityModifier}`
+        );
+        doc.text(adjustmentNote, 14, currentY);
+        currentY += 6;
+      }
+
+      currentY += 6;
+
+      // 2. Timeline Visualization
+      const timelineX = 14;
+      const timelineW = 180;
+      const timelineH = 20;
+      const scale = timelineW / (tds.totalDuration || 1);
+
+      // Timeline Background
+      doc.setDrawColor(200);
+      doc.setFillColor(245, 245, 245);
+      doc.rect(timelineX, currentY, timelineW, timelineH, 'FD');
+
+      // Timeline Segments
+      tds.events.forEach(e => {
+        const x = timelineX + (e.start * scale);
+        const w = (e.end - e.start) * scale;
+        if (w < 0.2) return;
+        const colorHex = getAttributeColor(e.attrId);
+        doc.setFillColor(colorHex);
+        doc.rect(x, currentY, w, timelineH, 'F');
+      });
+
+      // Swallow Marker
+      if (tds.swallowTime > 0) {
+        const swallowX = timelineX + (tds.swallowTime * scale);
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.5);
+        doc.line(swallowX, currentY - 2, swallowX, currentY + timelineH + 2);
+        doc.setFontSize(8);
+        doc.setTextColor(50);
+        doc.text(t("Swallow", "Tragar"), swallowX - 5, currentY - 3);
+      }
+
+      // Attack Phase End Marker
+      if (analysis && analysis.attackPhaseDuration > 0) {
+        const attackEndAbs = analysis.firstOnset + analysis.attackPhaseDuration;
+        const attackX = timelineX + (attackEndAbs * scale);
+        doc.setDrawColor(100);
+        doc.setLineWidth(0.5);
+        doc.line(attackX, currentY - 2, attackX, currentY + timelineH + 2);
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text(t("Attack End", "Fin Ataque"), attackX - 5, currentY - 3);
+      }
+
+      currentY += timelineH + 10;
+
+      // 3. Detailed TDS Data Table
+      if (analysis && analysis.scores) {
+        currentY += 5;
+
+        // Hydrate map if it's an object
+        let scoresEntries: [string, any][] = [];
+        if (analysis.scores instanceof Map) {
+          scoresEntries = Array.from(analysis.scores.entries());
+        } else {
+          scoresEntries = Object.entries(analysis.scores as any);
+        }
+
+        const sortedScores = scoresEntries
+          .filter(([_, res]) => res.durationPercent > 0)
+          .sort((a, b) => b[1].score - a[1].score);
+
+        const tableRows = sortedScores.map(([attrId, result]) => {
+          const attr = session.attributes.find(a => a.id === attrId) ||
+            INITIAL_QUALITY_ATTRIBUTES.find(a => a.id === attrId);
+
+          let name = attrId;
+          if (attr) {
+            name = isEs ? attr.nameEs : attr.nameEn;
+          } else {
+            name = attrId.charAt(0).toUpperCase() + attrId.slice(1).replace('_', ' ');
+          }
+
+          const isBoosted = result.originalScore !== undefined && result.originalScore < result.score;
+          const scoreDisplay = isBoosted ? `${result.score} (*)` : result.score.toString();
+
+          return [
+            "",
+            name,
+            `${result.durationPercent.toFixed(1)}%`,
+            scoreDisplay
+          ];
+        });
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [[
+            "",
+            t("TDS Attribute", "Atributo TDS"),
+            { content: t("Dominance %", "Dominancia %"), styles: { halign: 'center' } },
+            { content: t("CoEx Score", "Puntaje CoEx"), styles: { halign: 'center' } }
+          ]],
+          body: tableRows,
+          theme: 'grid',
+          headStyles: { fillColor: [150, 150, 150], textColor: 255 },
+          styles: { fontSize: 8, cellPadding: 2 },
+          columnStyles: {
+            0: { cellWidth: 8 }, // Color box width
+            1: { cellWidth: 80 },
+            2: { halign: 'center' },
+            3: { halign: 'center', fontStyle: 'bold' }
+          },
+          margin: { left: 14, right: 14 },
+          didDrawCell: (data) => {
+            if (data.section === 'body' && data.column.index === 0) {
+              const rowIndex = data.row.index;
+              if (rowIndex < sortedScores.length) {
+                const attrId = sortedScores[rowIndex][0];
+                const colorHex = getAttributeColor(attrId);
+
+                // Calculate center
+                const boxSize = 4;
+                const x = data.cell.x + (data.cell.width - boxSize) / 2;
+                const y = data.cell.y + (data.cell.height - boxSize) / 2;
+
+                doc.setFillColor(colorHex);
+                doc.rect(x, y, boxSize, boxSize, 'F');
+              }
+            }
+          }
+        });
+
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+
+      // 4. Aroma Insights (if available)
+      if (analysis && analysis.aromaNotes.length > 0) {
+        // Resolve names
+        const aromaNames = analysis.aromaNotes.map(id => {
+          // Find attribute
+          const attr = session.attributes.find(a => a.id === id) ||
+            session.attributes.flatMap(a => a.subAttributes || []).find(s => s.id === id);
+
+          if (!attr) return id;
+          // Need to handle if it's a subAttribute vs attribute
+          // The 'attr' found might be a subAttribute which has nameEn/nameEs
+          return isEs ? (attr as any).nameEs : (attr as any).nameEn;
+        });
+
+        const aromaText = aromaNames.join(", ");
+        if (aromaText) {
+          addTextSection(t("Dominant Aromas (Attack Phase)", "Aromas Dominantes (Fase de Ataque)"), aromaText);
+        }
+      }
+
+      // 5. Dominant Aftertaste + Aftertaste Boosts
+      if (analysis) {
+        const attrLabels: Record<string, { en: string; es: string }> = {
+          cacao: { en: 'Cacao', es: 'Cacao' },
+          acidity: { en: 'Acidity', es: 'Acidez' },
+          bitterness: { en: 'Bitterness', es: 'Amargor' },
+          astringency: { en: 'Astringency', es: 'Astringencia' },
+          roast: { en: 'Roast', es: 'Tostado' },
+          fresh_fruit: { en: 'Fresh Fruit', es: 'Fruta Fresca' },
+          browned_fruit: { en: 'Browned Fruit', es: 'Fruta Marrón' },
+          vegetal: { en: 'Vegetal', es: 'Vegetal' },
+          floral: { en: 'Floral', es: 'Floral' },
+          woody: { en: 'Woody', es: 'Madera' },
+          spice: { en: 'Spice', es: 'Especia' },
+          nutty: { en: 'Nutty', es: 'Nuez' },
+          caramel: { en: 'Caramel', es: 'Caramelo' },
+          sweetness: { en: 'Sweetness', es: 'Dulzor' },
+          defects: { en: 'Defects', es: 'Defectos' },
+        };
+
+        // Dominant Aftertaste
+        if (analysis.dominantAftertaste) {
+          const domLabel = attrLabels[analysis.dominantAftertaste]?.[isEs ? 'es' : 'en'] || analysis.dominantAftertaste;
+          addTextSection(t("Dominant Aftertaste", "Retrogusto Dominante"), domLabel);
+        }
+
+        // Aftertaste Boosts (e.g., "Cacao +3, Nutty +2")
+        if (analysis.aftertasteBoosts && analysis.aftertasteBoosts.length > 0) {
+          const boostText = analysis.aftertasteBoosts
+            .map(b => {
+              const label = attrLabels[b.attrId]?.[isEs ? 'es' : 'en'] || b.attrId;
+              return `${label} +${b.amount}`;
+            })
+            .join(', ');
+          addTextSection(t("Aftertaste Boosts", "Refuerzos de Retrogusto"), boostText);
+        }
+      }
+    }
+
     // Sample counter footer
     doc.setFontSize(8);
     doc.setTextColor(150);
@@ -320,3 +579,6 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
 
   doc.save(filename);
 };
+
+
+

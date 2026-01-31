@@ -17,9 +17,12 @@ import { useLanguage } from '../context/LanguageContext';
 
 interface FlavorRadarProps {
   attributes: FlavorAttribute[];
+  height?: string;
+  hideTitle?: boolean;
+  className?: string;
 }
 
-const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes }, ref) => {
+const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes, height = '500px', hideTitle = false, className = '' }, ref) => {
   const { language } = useLanguage();
   // Order logic matches standard CoEx flow
   const order = useMemo(() => [
@@ -40,7 +43,8 @@ const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes }
     'roast'
   ], []);
 
-  // Helper to process label text (handles newlines for Chart.js)
+  // ... (label and color logic remains) ...
+
   const getLabel = (id: string, attr: FlavorAttribute | undefined) => {
     let text = '';
 
@@ -154,7 +158,7 @@ const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes }
           backdropColor: 'transparent', // No background box for numbers
           color: '#8c5e4a',
           font: {
-            size: 10
+            size: 8 // Smaller font for smaller charts
           }
         },
         grid: {
@@ -169,7 +173,7 @@ const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes }
           display: true,
           centerPointLabels: true,
           font: {
-            size: 9,
+            size: 8, // Smaller font for smaller charts
             family: 'sans-serif',
             weight: 'bold',
           },
@@ -199,10 +203,12 @@ const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes }
   }), []);
 
   return (
-    <div className="w-full h-[500px] bg-white rounded-xl shadow-sm border border-cacao-100 p-1 flex flex-col">
-      <h3 className="text-center font-serif text-cacao-800 text-lg mb-2 flex-none pt-2">
-        {language === 'es' ? 'Gráfico de Sabor' : 'Flavor Profile'}
-      </h3>
+    <div className={`w-full bg-white rounded-xl shadow-sm border border-cacao-100 p-1 flex flex-col ${className}`} style={{ height }}>
+      {!hideTitle && (
+        <h3 className="text-center font-serif text-cacao-800 text-lg mb-2 flex-none pt-2">
+          {language === 'es' ? 'Gráfico de Sabor' : 'Flavor Profile'}
+        </h3>
+      )}
       <div className="flex-1 w-full relative min-h-0">
         <PolarArea ref={ref} data={data} options={options} />
       </div>

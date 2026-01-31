@@ -137,7 +137,8 @@ const SamplesPage: React.FC = () => {
                 attributes: s.attributes,
                 globalQuality: s.globalQuality,
                 selectedQualityId: s.selectedQualityId,
-                language: language
+                language: language,
+                tdsProfile: s.tdsProfile // Include TDS Profile in export
             }));
 
             await generatePdf(sessions, undefined, filename);

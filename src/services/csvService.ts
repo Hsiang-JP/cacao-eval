@@ -1,6 +1,22 @@
 import { StoredSample } from './dbService';
 import { CSV_HEADERS_EN, CSV_HEADERS_ES, INITIAL_ATTRIBUTES, INITIAL_QUALITY_ATTRIBUTES } from '../constants';
-import { FlavorAttribute } from '../types';
+import { FlavorAttribute, TDSMode, TDSAnalysisResult, TDSScoreResult } from '../types';
+import { parseEventsFromJSON, analyzeTDS } from '../utils/tdsCalculator';
+
+// Helper to export TDS intervals as JSON
+const getTDSIntervalsJson = (sample: StoredSample, attrId: string): string => {
+    if (!sample.tdsProfile?.events) return '';
+    const events = sample.tdsProfile.events.filter(e => e.attrId === attrId);
+    if (events.length === 0) return '';
+
+    const intervals = events.map(e => ({
+        start: Math.round(e.start * 100) / 100,
+        end: Math.round(e.end * 100) / 100
+    }));
+
+    // Return JSON string escaped for CSV
+    return `"${JSON.stringify(intervals).replace(/"/g, '""')}"`;
+};
 
 export const generateCSVRow = (sample: StoredSample, language: 'en' | 'es'): (string | number)[] => {
     const getDate = () => {
@@ -31,7 +47,44 @@ export const generateCSVRow = (sample: StoredSample, language: 'en' | 'es'): (st
         return attr?.subAttributes?.find(s => s.id === subId)?.description || '';
     };
 
-    // 4. Construct the row
+    // 4. Prepare TDS Analysis Data
+    let analysis: TDSAnalysisResult | null = null;
+    if (sample.tdsProfile) {
+        if (sample.tdsProfile.analysis) {
+            analysis = sample.tdsProfile.analysis;
+        } else {
+            try {
+                analysis = analyzeTDS(sample.tdsProfile);
+            } catch (e) {
+                // Ignore error
+            }
+        }
+    }
+
+    const getTDSData = (attrId: string): { duration: string, score: string } => {
+        if (!analysis || !analysis.scores) return { duration: '', score: '' };
+
+        let result: TDSScoreResult | undefined;
+        if (analysis.scores instanceof Map) {
+            result = analysis.scores.get(attrId);
+        } else {
+            result = (analysis.scores as any)[attrId];
+        }
+
+        if (!result) return { duration: '', score: '' };
+
+        return {
+            duration: result.durationPercent.toFixed(1) + '%',
+            score: result.score.toString()
+        };
+    };
+
+    const getTDSMetric = (key: 'aromaIntensity' | 'aftertasteIntensity' | 'aftertasteQuality' | 'attackPhaseDuration'): string | number => {
+        if (!analysis) return '';
+        return analysis[key] || '';
+    };
+
+    // 5. Construct the row
     return [
         "", // Original Ordering
         getDate(),
@@ -119,6 +172,48 @@ export const generateCSVRow = (sample: StoredSample, language: 'en' | 'es'): (st
         sample.selectedQualityId === 'q_astringency' ? 10 : 0,
         sample.selectedQualityId === 'q_bitterness' ? 10 : 0,
         sample.selectedQualityId === 'q_aftertaste' ? 10 : 0,
+
+        // TDS Columns
+        sample.tdsProfile?.mode || '',
+        sample.tdsProfile?.totalDuration || '',
+        sample.tdsProfile?.swallowTime || '',
+        sample.tdsProfile?.events ? `"${JSON.stringify(sample.tdsProfile.events).replace(/"/g, '""')}"` : '',
+        // Aggregated TDS intervals per attribute
+        getTDSIntervalsJson(sample, 'cacao'),
+        getTDSIntervalsJson(sample, 'acidity'),
+        getTDSIntervalsJson(sample, 'bitterness'),
+        getTDSIntervalsJson(sample, 'astringency'),
+        getTDSIntervalsJson(sample, 'roast'),
+        getTDSIntervalsJson(sample, 'fresh_fruit'),
+        getTDSIntervalsJson(sample, 'browned_fruit'),
+        getTDSIntervalsJson(sample, 'vegetal'),
+        getTDSIntervalsJson(sample, 'floral'),
+        getTDSIntervalsJson(sample, 'woody'),
+        getTDSIntervalsJson(sample, 'spice'),
+        getTDSIntervalsJson(sample, 'nutty'),
+        getTDSIntervalsJson(sample, 'caramel'),
+        getTDSIntervalsJson(sample, 'sweetness'),
+        getTDSIntervalsJson(sample, 'defects'),
+
+        // New columns: Aroma & Aftertaste Intensity/Quality
+        getTDSMetric('aromaIntensity'),
+        getTDSMetric('aftertasteIntensity'),
+        getTDSMetric('aftertasteQuality'),
+        // Dominant Aftertaste and Aftertaste Boosts
+        analysis?.dominantAftertaste || '',
+        analysis?.aftertasteBoosts?.length
+            ? analysis.aftertasteBoosts.map(b => `${b.attrId} +${b.amount}`).join(', ')
+            : '',
+        getTDSMetric('attackPhaseDuration'), // Attack Duration
+
+        // Detailed TDS Metrics (Duration %, Score)
+        // Order must match constants.ts
+        ...['cacao', 'acidity', 'bitterness', 'astringency', 'roast', 'fresh_fruit', 'browned_fruit',
+            'vegetal', 'floral', 'woody', 'spice', 'nutty', 'caramel', 'sweetness', 'defects']
+            .flatMap(id => {
+                const d = getTDSData(id);
+                return [d.duration, d.score];
+            })
     ];
 };
 
@@ -205,6 +300,22 @@ export const parseSamplesFromCSV = (data: any[], language: 'en' | 'es'): Omit<St
         // Only set if we found a positive score (likely 10)
         if (maxQualityScore > 0) {
             sample.selectedQualityId = selectedQualityId;
+        }
+
+        // TDS Data Parsing
+        const tdsModeStr = getValue(row, "TDS Mode", "Modo TDS");
+        if (tdsModeStr && (tdsModeStr === 'normal' || tdsModeStr === 'expert')) {
+            const tdsEventsJson = getValue(row, "TDS Events JSON", "Eventos TDS JSON");
+            const events = parseEventsFromJSON(tdsEventsJson);
+
+            if (events.length > 0) {
+                sample.tdsProfile = {
+                    mode: tdsModeStr as TDSMode,
+                    totalDuration: getNumber(row, "TDS Total Duration (s)", "Duración Total TDS (s)"),
+                    swallowTime: getNumber(row, "TDS Swallow Time (s)", "Tiempo de Tragado TDS (s)"),
+                    events: events
+                };
+            }
         }
 
         return sample;

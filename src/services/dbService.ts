@@ -25,6 +25,9 @@ export interface StoredSample {
     globalQuality: number;
     selectedQualityId?: string;
 
+    // TDS Profile (optional)
+    tdsProfile?: GradingSession['tdsProfile'];
+
     // Timestamps
     createdAt: number; // Unix timestamp
     updatedAt: number; // Unix timestamp

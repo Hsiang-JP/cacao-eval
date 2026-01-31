@@ -6,14 +6,17 @@ import ScoreSlider from '../components/ScoreSlider';
 import FlavorRadar from '../components/FlavorRadar';
 import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
-import { GradingSession, SampleMetadata, QualityAttribute, SubAttribute } from '../types';
+import TDSProfilerModal from '../components/tds/TDSProfilerModal';
+import TDSSummary from '../components/tds/TDSSummary';
+import TDSModeSelector from '../components/tds/TDSModeSelector';
+import { GradingSession, SampleMetadata, QualityAttribute, SubAttribute, TDSMode, TDSProfile, TDSScoreResult, TDSAnalysisResult } from '../types';
+import { applyTDSScoresToAttributes } from '../utils/tdsCalculator';
 import {
   INITIAL_ATTRIBUTES,
   INITIAL_QUALITY_ATTRIBUTES,
   TRANSLATIONS,
-
 } from '../constants';
-import { RefreshCw, CheckCircle, Play, FileText, ChevronDown, ChevronUp, Save, Plus } from 'lucide-react';
+import { RefreshCw, CheckCircle, Play, FileText, ChevronDown, ChevronUp, Save, Plus, Activity } from 'lucide-react';
 import { dbService, StoredSample } from '../services/dbService';
 import { getAttributeColor } from '../utils/colors';
 import { getCurrentISODate, getCurrentTime } from '../utils/dateUtils';
@@ -31,6 +34,13 @@ const EvaluatePage: React.FC = () => {
   const [isEvaluationStarted, setIsEvaluationStarted] = useState(false);
   const [isGlobalQualityExpanded, setIsGlobalQualityExpanded] = useState(true);
   const [showPostSaveModal, setShowPostSaveModal] = useState(false);
+
+  // TDS State
+  const [showTDSModeSelect, setShowTDSModeSelect] = useState(false);
+  const [showTDSProfiler, setShowTDSProfiler] = useState(false);
+  const [showTDSSummary, setShowTDSSummary] = useState(false);
+  const [tdsMode, setTdsMode] = useState<TDSMode>('normal');
+  const [tdsProfile, setTdsProfile] = useState<TDSProfile | null>(null);
 
   // Reference for the Radar Chart to export image for PDF
   const chartRef = useRef<any>(null);
@@ -328,6 +338,7 @@ const EvaluatePage: React.FC = () => {
         globalQuality: session.globalQuality,
         selectedQualityId: session.selectedQualityId,
         language: language,
+        tdsProfile: session.tdsProfile,
       };
 
       // Save (create or update based on finalId)
@@ -381,12 +392,67 @@ const EvaluatePage: React.FC = () => {
         language
       });
       setIsEvaluationStarted(false);
+      setTdsProfile(null);
       window.scrollTo(0, 0);
     }
   };
 
+  // TDS Handlers
+  const handleStartTDS = () => {
+    // Auto-generate date/time just like Start Evaluation
+    const dateStr = getCurrentISODate();
+    const timeStr = getCurrentTime();
 
+    setSession(prev => ({
+      ...prev,
+      metadata: { ...prev.metadata, date: dateStr, time: timeStr }
+    }));
+    setShowTDSModeSelect(true);
+  };
 
+  const handleTDSModeSelect = (mode: TDSMode) => {
+    setTdsMode(mode);
+    setShowTDSModeSelect(false);
+    setShowTDSProfiler(true);
+  };
+
+  const handleTDSComplete = (profile: TDSProfile) => {
+    setTdsProfile(profile);
+    setShowTDSProfiler(false);
+    setShowTDSSummary(true);
+  };
+  const handleTDSApply = (scores: Map<string, TDSScoreResult>, analysis: TDSAnalysisResult) => {
+    // Apply TDS scores to session attributes
+    const updatedAttributes = applyTDSScoresToAttributes(session.attributes, scores);
+
+    // Persist analysis in profile
+    const updatedProfile = tdsProfile ? { ...tdsProfile, analysis } : undefined;
+    setTdsProfile(updatedProfile || null);
+
+    setSession(prev => ({
+      ...prev,
+      attributes: updatedAttributes,
+      tdsProfile: updatedProfile
+    }));
+    setShowTDSSummary(false);
+    setIsEvaluationStarted(true);
+  };
+
+  const handleTDSDiscard = () => {
+    // Discard data and return to form
+    setTdsProfile(null);
+    setShowTDSSummary(false);
+  };
+
+  const handleTDSSave = () => {
+    // Save profile to session but DO NOT update attribute scores (sliders)
+    setSession(prev => ({
+      ...prev,
+      tdsProfile: tdsProfile || undefined
+    }));
+    setShowTDSSummary(false);
+    setIsEvaluationStarted(true);
+  };
   /* Removed static import of pdfService and ChartJS */
 
 
@@ -471,9 +537,9 @@ const EvaluatePage: React.FC = () => {
           </div>
         </section>
 
-        {/* Start Evaluation Button */}
+        {/* Start Evaluation & TDS Buttons */}
         {!isEvaluationStarted && (
-          <div className="flex justify-center">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button
               type="button"
               onClick={handleStartEvaluation}
@@ -481,6 +547,14 @@ const EvaluatePage: React.FC = () => {
             >
               <Play size={20} fill="currentColor" />
               {t.startEvaluation}
+            </button>
+            <button
+              type="button"
+              onClick={handleStartTDS}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2"
+            >
+              <Activity size={20} />
+              {language === 'es' ? 'Perfil TDS' : 'TDS Profile'}
             </button>
           </div>
         )}
@@ -704,6 +778,37 @@ const EvaluatePage: React.FC = () => {
                 {language === 'es' ? 'Seguir editando' : 'Keep editing'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TDS Mode Selection Modal */}
+      {showTDSModeSelect && (
+        <TDSModeSelector
+          onSelect={handleTDSModeSelect}
+          onCancel={() => setShowTDSModeSelect(false)}
+        />
+      )}
+
+      {/* TDS Profiler Modal */}
+      {showTDSProfiler && (
+        <TDSProfilerModal
+          mode={tdsMode}
+          onComplete={handleTDSComplete}
+          onCancel={() => setShowTDSProfiler(false)}
+        />
+      )}
+
+      {/* TDS Summary Modal */}
+      {showTDSSummary && tdsProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-auto">
+          <div className="max-w-2xl w-full">
+            <TDSSummary
+              profile={tdsProfile}
+              onApply={handleTDSApply}
+              onDiscard={handleTDSDiscard}
+              onSave={handleTDSSave}
+            />
           </div>
         </div>
       )}

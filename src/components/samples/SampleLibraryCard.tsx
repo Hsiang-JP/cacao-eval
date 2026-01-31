@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StoredSample } from '../../services/dbService';
-import { Calendar, User, ChevronDown, ChevronUp, CheckSquare, Square, Trash2 } from 'lucide-react';
+import { Calendar, User, ChevronDown, ChevronUp, CheckSquare, Square, Trash2, Activity } from 'lucide-react';
 import IndividualBarChart from './IndividualBarChart';
 import { getAttributeColor } from '../../utils/colors';
 
@@ -36,62 +36,70 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
     };
 
     return (
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-cacao-100 hover:shadow-md transition-shadow relative group/card">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-cacao-100 hover:shadow-md transition-shadow relative group/card overflow-hidden">
 
             {/* Header: Checkbox, Code, Type, Score */}
-            <div className="flex justify-between items-start mb-2">
-                <div className="flex items-start gap-3">
+            <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
+                {/* Left side: Checkbox + Sample Info */}
+                <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                     <button
                         onClick={() => onToggleSelect(sample.id)}
-                        className="mt-1 text-gray-400 hover:text-cacao-600 transition-colors"
+                        className="mt-1 text-gray-400 hover:text-cacao-600 transition-colors flex-shrink-0"
                     >
                         {isSelected ? (
-                            <CheckSquare size={24} className="text-cacao-600" />
+                            <CheckSquare size={22} className="text-cacao-600" />
                         ) : (
-                            <Square size={24} />
+                            <Square size={22} />
                         )}
                     </button>
-                    <div>
-                        <div className="flex items-baseline gap-2">
-                            <h3 className="font-bold text-2xl text-cacao-900 leading-tight">{sample.sampleCode}</h3>
-                            <span className="text-gray-500 text-sm font-medium">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                            <h3 className="font-bold text-xl sm:text-2xl text-cacao-900 leading-tight truncate">{sample.sampleCode}</h3>
+                            <span className="text-gray-500 text-xs sm:text-sm font-medium">
                                 {sample.evaluationType === 'cacao_mass'
                                     ? (language === 'es' ? 'Masa de Cacao' : 'Cacao Mass')
                                     : (language === 'es' ? 'Chocolate' : 'Chocolate')}
                             </span>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                        <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-500 mt-1 flex-wrap">
                             <div className="flex items-center gap-1">
-                                <Calendar size={14} />
+                                <Calendar size={12} className="flex-shrink-0" />
                                 <span>{formatDate(sample.date)}</span>
                             </div>
-                            <span>•</span>
+                            <span className="hidden sm:inline">•</span>
                             <div className="flex items-center gap-1">
-                                <User size={14} />
-                                <span>{sample.evaluator}</span>
+                                <User size={12} className="flex-shrink-0" />
+                                <span className="truncate max-w-[80px] sm:max-w-none">{sample.evaluator}</span>
                             </div>
+                            {sample.tdsProfile && (
+                                <div className="flex items-center gap-1 text-amber-700 font-bold bg-amber-100 px-1.5 py-0.5 rounded-full" aria-label="TDS Profile Included">
+                                    <Activity size={10} />
+                                    <span className="text-[10px]">TDS</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-2">
-                    {/* Delete Button - Only visible on hover or if mobile */}
+                {/* Right side: Score + Delete - Fixed width on mobile */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex flex-col items-end">
+                        <span className="text-2xl sm:text-3xl font-mono font-bold text-cacao-800 leading-none">{sample.globalQuality}</span>
+                        <span className="text-[9px] sm:text-[10px] uppercase text-gray-400 font-bold mt-0.5">Score</span>
+                    </div>
+                    {/* Delete Button */}
                     {onDelete && (
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onDelete(sample.id, sample.sampleCode);
                             }}
-                            className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                            className="text-gray-300 hover:text-red-500 transition-colors p-1 flex-shrink-0"
                             title={t.delete || "Delete"}
                         >
                             <Trash2 size={18} />
                         </button>
                     )}
-                    <div className="flex flex-col items-end">
-                        <span className="text-3xl font-mono font-bold text-cacao-800 leading-none">{sample.globalQuality}</span>
-                        <span className="text-[10px] uppercase text-gray-400 font-bold mt-1">Score</span>
-                    </div>
                 </div>
             </div>
 

@@ -39,8 +39,22 @@ const IndividualBarChart: React.FC<IndividualBarChartProps> = ({ sample, orienta
 
     const attributes = sample.attributes.filter(a => a.score > 0 || true); // Show all
 
+    // Helper to clean attribute labels - remove parenthetical suffixes and simplify compound names
+    const cleanLabel = (name: string): string => {
+        return name
+            // Remove common parenthetical suffixes
+            .replace(/\s*\(Total\)\s*$/i, '')
+            .replace(/\s*\(totales\)\s*$/i, '')
+            .replace(/\s*\(total\)\s*$/i, '')
+            .replace(/\s*\(only for chocolate\)\s*$/i, '')
+            .replace(/\s*\(solo para chocolate\)\s*$/i, '')
+            // Simplify compound Spanish names
+            .replace(/Sabores Atípicos\s*\/?\s*/i, '') // Remove "Sabores Atípicos /" prefix, leaves "Defectos"
+            .trim();
+    };
+
     const data = {
-        labels: attributes.map(a => language === 'es' ? a.nameEs : a.nameEn),
+        labels: attributes.map(a => cleanLabel(language === 'es' ? a.nameEs : a.nameEn)),
         datasets: [
             {
                 label: 'Score',
