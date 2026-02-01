@@ -67,8 +67,10 @@ export interface TDSEvent {
 export interface TDSScoreResult {
   score: number;
   durationPercent: number;
+  totalDuration?: number; // Raw total duration in seconds
+  isPresent?: boolean; // Explicit visibility flag
   isFlagged: boolean;
-  category: 'core' | 'complementary' | 'defect';
+  category: 'core' | 'complementary' | 'defect' | string;
   zoneBreakdown?: {
     attack: number;
     body: number;
@@ -79,6 +81,7 @@ export interface TDSScoreResult {
     amount: number;
     duration: number;
     type: 'individual' | 'aggregated';
+    reason?: 'aftertaste' | 'composition' | 'mixed';
   };
 }
 
@@ -86,13 +89,15 @@ export interface TDSAnalysisResult {
   scores: Map<string, TDSScoreResult>;
   coreScores: Map<string, TDSScoreResult>;
   aromaIntensity: number;
+  aromaPercent: number; // Max percentage in attack phase
   aromaNotes: string[];
   aftertasteIntensity: number;
+  aftertastePercent: number; // Max percentage in finish phase
   aftertasteQuality: 'positive' | 'neutral' | 'negative';
   dominantAftertaste: string | null; // The dominant flavor in the aftertaste phase
   aftertasteBoosts: { attrId: string; amount: number }[]; // Attributes boosted due to aftertaste presence
-  kickSuggestions: string[]; // Suggestions based on initial kick (0-20%)
-  qualitySuggestions: string[]; // Suggestions based on aftertaste quality
+  kickSuggestions: { en: string; es: string }[]; // Bilingual suggestions
+  qualitySuggestions: { en: string; es: string }[]; // Bilingual suggestions
   qualityModifier: number;
   firstOnset: number;
   attackPhaseDuration: number;

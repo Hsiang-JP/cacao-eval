@@ -27,16 +27,43 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
     const analysis = useMemo(() => analyzeTDS(profile), [profile]);
 
 
-    // Check for warnings
+    // Complementary scores for Expert mode (Hoisted for visibility check)
+    // Complementary scores for Expert mode (Hoisted for visibility check)
+    const complementaryScores = useMemo(() => {
+        if (profile.mode !== 'expert') return [];
+        return Array.from(analysis.scores.entries())
+            .filter(([id, s]) => !CORE_ATTRIBUTES.includes(id) && (s.isPresent || (s.totalDuration || 0) > 0 || s.durationPercent > 0))
+            .sort(([, a], [, b]) => b.durationPercent - a.durationPercent)
+            // Sort defects to the end
+            .sort(([aId], [bId]) => {
+                const aIsDefect = DEFECT_ATTRIBUTES.includes(aId);
+                const bIsDefect = DEFECT_ATTRIBUTES.includes(bId);
+                if (aIsDefect && !bIsDefect) return 1;
+                if (!aIsDefect && bIsDefect) return -1;
+                return 0;
+            });
+    }, [analysis.scores, profile.mode]);
+
+    // Check for warnings ONLY on visible attributes
     const hasFlaggedScores = useMemo(() => {
-        return Array.from(analysis.scores.values()).some(s => s.isFlagged);
-    }, [analysis.scores]);
+        // Check Core
+        const coreFlagged = Array.from(analysis.coreScores.values()).some(s => s.isFlagged);
+        // Check Complementary (only if visible)
+        const compFlagged = complementaryScores.some(([, s]) => s.isFlagged);
+        return coreFlagged || compFlagged;
+    }, [analysis.coreScores, complementaryScores]);
 
     const hasDefects = useMemo(() => {
         return Array.from(analysis.scores.entries()).some(([id, s]) =>
             DEFECT_ATTRIBUTES.includes(id) && s.durationPercent > 0
         );
     }, [analysis.scores]);
+
+    const hasVisibleBoosts = useMemo(() => {
+        const coreBoosts = Array.from(analysis.coreScores.values()).some(s => s.boostDetails !== undefined);
+        const compBoosts = complementaryScores.some(([, s]) => s.boostDetails !== undefined);
+        return coreBoosts || compBoosts;
+    }, [analysis.coreScores, complementaryScores]);
 
     const handleApply = () => {
         // Merge scores for application
@@ -63,14 +90,6 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
         });
     }, [analysis, profile.mode]);
 
-    // Complementary scores for Expert mode
-    const complementaryScores = useMemo(() => {
-        if (profile.mode !== 'expert') return [];
-        return Array.from(analysis.scores.entries())
-            .filter(([id, s]) => !CORE_ATTRIBUTES.includes(id) && !DEFECT_ATTRIBUTES.includes(id) && s.durationPercent > 0)
-            .sort(([, a], [, b]) => b.durationPercent - a.durationPercent);
-    }, [analysis.scores, profile.mode]);
-
     return (
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto">
             {/* Header */}
@@ -92,7 +111,7 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                         : 'Scores based on zones: Attack (0-20%), Evolution (20-100%), Finish (aftertaste)'}
                 </p>
                 {/* Global Boost Notification */}
-                {Array.from(analysis.scores.values()).some(s => s.boostDetails !== undefined) && (
+                {hasVisibleBoosts && (
                     <p className="text-xs text-indigo-700 mt-1 font-medium flex items-center gap-1">
                         <Sparkles size={12} />
                         {language === 'es'
@@ -225,9 +244,7 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                                             {swallow.toFixed(1)}s
                                         </span>
                                         {/* End time */}
-                                        <span className="absolute right-0 text-gray-600">
-                                            {total.toFixed(1)}s
-                                        </span>
+
                                     </div>
                                 </>
                             );
@@ -312,21 +329,22 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                                     <div className="flex h-3 w-3 items-center justify-center rounded-full bg-indigo-100 text-[9px] font-bold mt-0.5 flex-shrink-0">↑</div>
                                     <span>
                                         {language === 'es'
-                                            ? `Recomendación: +${result.boostDetails.amount} (Presencia tras tragar: ${result.boostDetails.duration}s)`
-                                            : `Recommendation: +${result.boostDetails.amount} (Lingering presence: ${result.boostDetails.duration}s)`}
+                                            ? `Recomendación: +${result.boostDetails.amount} (${result.boostDetails.reason === 'aftertaste'
+                                                ? `Presencia tras tragar: ${result.boostDetails.duration}s`
+                                                : result.boostDetails.reason === 'mixed'
+                                                    ? `Presencia fuerte: ${result.boostDetails.duration}s`
+                                                    : `Contribución componentes: ${result.boostDetails.duration}s`
+                                            })`
+                                            : `Recommendation: +${result.boostDetails.amount} (${result.boostDetails.reason === 'aftertaste'
+                                                ? `Lingering presence: ${result.boostDetails.duration}s`
+                                                : result.boostDetails.reason === 'mixed'
+                                                    ? `Strong presence: ${result.boostDetails.duration}s`
+                                                    : `Component presence: ${result.boostDetails.duration}s`
+                                            })`}
                                     </span>
                                 </div>
                             )}
 
-                            {/* Special attribute rarity feedback (also inline for consistency) */}
-                            {result.category === 'complementary' && result.score >= 6 && result.durationPercent < 30 && (
-                                <div className="mt-1 ml-5 text-xs text-blue-600 flex items-center gap-1">
-                                    <Sparkles size={10} />
-                                    <span>
-                                        {language === 'es' ? 'Bonificación por rareza' : 'Rarity Bonus'}
-                                    </span>
-                                </div>
-                            )}
                         </div>
                     ))}
                 </div>
@@ -338,14 +356,49 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                         <h4 className="text-sm font-bold text-gray-600 uppercase mb-2">
                             {language === 'es' ? 'Complementarios' : 'Complementary'}
                         </h4>
-                        <div className="grid grid-cols-2 gap-1.5">
+                        <div className="grid grid-cols-1 gap-1.5">
                             {complementaryScores.map(([attrId, result]) => (
-                                <div key={attrId} className="flex items-center justify-between bg-gray-50 rounded px-2 py-1.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getAttributeColor(attrId) }} />
-                                        <span className="text-xs text-gray-600">{ATTRIBUTE_LABELS[attrId]?.[language] || attrId}</span>
+                                <div
+                                    key={attrId}
+                                    className={`flex flex-col rounded-lg px-3 py-2 ${result.isFlagged ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-between w-full">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getAttributeColor(attrId) }} />
+                                            <span className="text-sm text-gray-700 font-medium">{ATTRIBUTE_LABELS[attrId]?.[language] || attrId}</span>
+                                            {result.isFlagged && (
+                                                <span className="text-xs text-amber-600 bg-amber-100 px-1 rounded">!</span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-400">{result.durationPercent}%</span>
+                                            <span className={`font-bold w-6 text-right ${result.boostDetails ? 'text-indigo-700' : 'text-cacao-700'}`}>{result.score}</span>
+                                        </div>
                                     </div>
-                                    <span className="font-bold text-sm text-cacao-700">{result.score}</span>
+
+                                    {/* INLINE Visual feedback for Boosted Scores */}
+                                    {result.boostDetails && (
+                                        <div className="mt-1 ml-5 text-xs text-indigo-600 flex items-start gap-1">
+                                            <div className="flex h-3 w-3 items-center justify-center rounded-full bg-indigo-100 text-[9px] font-bold mt-0.5 flex-shrink-0">↑</div>
+                                            <span>
+                                                {language === 'es'
+                                                    ? `Recomendación: +${result.boostDetails.amount} (${result.boostDetails.reason === 'aftertaste'
+                                                        ? `Presencia tras tragar: ${result.boostDetails.duration}s`
+                                                        : result.boostDetails.reason === 'mixed'
+                                                            ? `Presencia fuerte: ${result.boostDetails.duration}s`
+                                                            : `Contribución componentes: ${result.boostDetails.duration}s`
+                                                    })`
+                                                    : `Recommendation: +${result.boostDetails.amount} (${result.boostDetails.reason === 'aftertaste'
+                                                        ? `Lingering presence: ${result.boostDetails.duration}s`
+                                                        : result.boostDetails.reason === 'mixed'
+                                                            ? `Strong presence: ${result.boostDetails.duration}s`
+                                                            : `Component presence: ${result.boostDetails.duration}s`
+                                                    })`}
+                                            </span>
+                                        </div>
+                                    )}
+
                                 </div>
                             ))}
                         </div>
@@ -362,7 +415,7 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                         <Wind size={16} />
                         <span className="text-xs font-bold uppercase">{language === 'es' ? 'Aroma' : 'Aroma'}</span>
                     </div>
-                    <div className="text-2xl font-bold text-amber-800">{analysis.aromaIntensity}/10</div>
+                    <div className="text-2xl font-bold text-amber-800">{analysis.aromaPercent}%</div>
                     {analysis.aromaNotes.length > 0 && (
                         <div className="text-xs text-amber-600 mt-1">
                             {analysis.aromaNotes.map(n => ATTRIBUTE_LABELS[n]?.[language] || n).join(', ')}
@@ -376,7 +429,7 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                         <Sparkles size={16} />
                         <span className="text-xs font-bold uppercase">{language === 'es' ? 'Post-gusto' : 'Aftertaste'}</span>
                     </div>
-                    <div className="text-2xl font-bold text-orange-800">{analysis.aftertasteIntensity}/10</div>
+                    <div className="text-2xl font-bold text-orange-800">{analysis.aftertastePercent}%</div>
                     <div className={`text-xs mt-1 ${analysis.aftertasteQuality === 'positive' ? 'text-green-600' :
                         analysis.aftertasteQuality === 'negative' ? 'text-red-600' : 'text-gray-500'
                         }`}>
@@ -399,14 +452,14 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                         {/* Kick Suggestions */}
                         {analysis.kickSuggestions?.map((suggestion, idx) => (
                             <div key={`kick-${idx}`} className="text-xs text-indigo-700 bg-white p-2 rounded border border-indigo-100 flex gap-2">
-                                {suggestion}
+                                {language === 'es' ? suggestion.es : suggestion.en}
                             </div>
                         ))}
 
                         {/* Quality Suggestions */}
                         {analysis.qualitySuggestions?.map((suggestion, idx) => (
                             <div key={`qual-${idx}`} className="text-xs text-indigo-700 bg-white p-2 rounded border border-indigo-100 flex gap-2">
-                                {suggestion}
+                                {language === 'es' ? suggestion.es : suggestion.en}
                             </div>
                         ))}
                     </div>
@@ -435,14 +488,9 @@ const TDSSummary: React.FC<TDSSummaryProps> = ({ profile, onApply, onDiscard, on
                             <span>{language === 'es' ? 'Atributos principales sin selección' : 'Core attributes not selected'}</span>
                         </div>
                     )}
-                    {hasDefects && (
-                        <div className="flex items-center gap-2 text-red-700 text-sm mt-1">
-                            <AlertTriangle size={16} />
-                            <span>{language === 'es' ? 'Defectos detectados' : 'Defects detected'}</span>
-                        </div>
-                    )}
                 </div>
             )}
+
 
             {/* Actions */}
             <div className="flex gap-3 p-4 bg-gray-50 border-t sticky bottom-0">

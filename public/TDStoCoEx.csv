@@ -1,0 +1,32 @@
+Core,,,
+TDS Duration %,Zone Classification,CoEx Score,CoEx Definition
+< 2.0%,Motor Noise,0,Absent
+2.0% – 6.6%,Sub-Threshold,1,Trace
+6.7% – 20%,Significant (>P0​),2 – 3,Low / Characterizing
+21% – 40%,Dominant,4 – 6,Dominant
+> 40%,High Dominance,7 – 10,Strong
+,,,
+Complementary,,,
+TDS Duration %,Zone Classification,CoEx Score,CoEx Definition
+< 1.5%,Motor Noise,0,Absent
+1.5% – 4.0%,Trace (Below P0​),1,Trace (May not be found again)
+4.1% – 6.6%,Trace (Below P0​),2,Present (Low intensity)
+6.7% – 15%,Significance (>P0​),3 – 4,Clearly Characterizing
+16% – 30%,Dominant,5 – 7,Dominant
+> 30%,High Dominance,8 – 10,Strong / Max
+,,,
+Defect,,,
+TDS Duration %,Zone Classification,CoEx Intensity,Quality Impact
+0,Absent,0,10 (Excellent)
+0.1% – 3.0%,Flash / Trace,1,8 (Good)
+3.1% – 6.6%,Present,2,6 (Ordinary)
+> 6.7%,Significant,> 3,< 4 (Bad/Terrible)
+,,,
+Normal mode,,,
+TDS Duration %,Zone Classification,CoEx Intensity,Quality Impact
+0 – 1.5%,Motor noise is constant regardless of mode.,0,Noise
+1.6% – 10%,"Below chance (20%). It was clicked, but rarely.",1,Trace
+11% – 19%,"Approaching chance, but not yet ""Characterizing.""",2,Present (Low intensity)
+20% – 35%,"Just crossed the Chance Line (P0​). It is now ""Real.""",3 - 4,Clearly Characterizing
+36% – 60%,Explicitly dominant for half the session.,5 - 7,Dominant
+> 60%,Overwhelmingly dominant.,8 - 10,Strong / Max

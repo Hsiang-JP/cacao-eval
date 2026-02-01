@@ -180,14 +180,14 @@ const ComparePage: React.FC = () => {
                                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'simple' ? 'bg-white text-cacao-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 <Activity size={16} className="inline mr-1" />
-                                {language === 'es' ? 'Radar' : 'Radar'}
+                                {language === 'es' ? 'Graficar' : 'Graph'}
                             </button>
                             <button
                                 onClick={() => setMode('advanced')}
                                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'advanced' ? 'bg-white text-cacao-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 <Layers size={16} className="inline mr-1" />
-                                {language === 'es' ? 'Grupos' : 'Clusters'}
+                                {language === 'es' ? 'Agrupamiento' : 'Clustering'}
                             </button>
                         </div>
 

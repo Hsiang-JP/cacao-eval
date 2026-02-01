@@ -7,6 +7,22 @@ import jsPDF from 'jspdf';
 import { Chart, registerables } from 'chart.js';
 import { FlavorAttribute } from '../types';
 import { formatDateForDisplay, getDateStringForFilename } from '../utils/dateUtils';
+import { ATTRIBUTE_LABELS } from '../data/attributes';
+
+// Helper to translate attribute ID or pipe-separated IDs
+const translateAttribute = (id: string, language: 'en' | 'es'): string => {
+    // Handle combined IDs like "roast|fresh_fruit"
+    if (id.includes('|')) {
+        return id.split('|').map(part => translateAttribute(part.trim(), language)).join(' | ');
+    }
+    // Handle known attributes
+    const label = ATTRIBUTE_LABELS[id];
+    if (label) {
+        return language === 'es' ? label.es : label.en;
+    }
+    // Fallback
+    return id;
+};
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -63,45 +79,11 @@ const generateComparisonChartImage = (samples: ComparisonSample[], language: 'en
         ];
 
         const getLabel = (id: string) => {
-            if (language === 'es') {
-                switch (id) {
-                    case 'roast': return 'TOSTADO';
-                    case 'acidity': return 'ACIDEZ';
-                    case 'fresh_fruit': return 'FRUTA FRESCA';
-                    case 'browned_fruit': return 'FRUTA MARRÓN';
-                    case 'vegetal': return 'VEGETAL';
-                    case 'floral': return 'FLORAL';
-                    case 'woody': return 'MADERA';
-                    case 'spice': return 'ESPECIA';
-                    case 'nutty': return 'NUEZ';
-                    case 'caramel': return 'CARAMELO';
-                    case 'sweetness': return 'DULZOR';
-                    case 'defects': return 'DEFECTOS';
-                    case 'cacao': return 'CACAO';
-                    case 'bitterness': return 'AMARGOR';
-                    case 'astringency': return 'ASTRINGENCIA';
-                    default: return id;
-                }
-            } else {
-                switch (id) {
-                    case 'roast': return 'ROAST';
-                    case 'acidity': return 'ACIDITY';
-                    case 'fresh_fruit': return 'FRESH FRUIT';
-                    case 'browned_fruit': return 'BROWNED FRUIT';
-                    case 'vegetal': return 'VEGETAL';
-                    case 'floral': return 'FLORAL';
-                    case 'woody': return 'WOODY';
-                    case 'spice': return 'SPICE';
-                    case 'nutty': return 'NUTTY';
-                    case 'caramel': return 'CARAMEL';
-                    case 'sweetness': return 'SWEETNESS';
-                    case 'defects': return 'DEFECTS';
-                    case 'cacao': return 'CACAO';
-                    case 'bitterness': return 'BITTERNESS';
-                    case 'astringency': return 'ASTRINGENCY';
-                    default: return id;
-                }
+            const label = ATTRIBUTE_LABELS[id];
+            if (label) {
+                return (language === 'es' ? label.es : label.en).toUpperCase();
             }
+            return id.toUpperCase();
         };
 
         const chartLabels = order.map(getLabel);
@@ -215,13 +197,16 @@ export const generateComparisonPdf = async (
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text(`${formatDateForDisplay(new Date().toISOString(), language)} | ${samples.length} ${t('samples', 'muestras')}`, marginLeft, currentY);
+    // Fix: extract just YYYY-MM-DD from ISO string before formatting
+    const isoDate = new Date().toISOString().split('T')[0];
+    doc.text(`${formatDateForDisplay(isoDate, language)} | ${samples.length} ${t('samples', 'muestras')}`, marginLeft, currentY);
     currentY += 10;
 
     // Generate and add the radar chart
     const chartImage = await generateComparisonChartImage(samples, language);
     if (chartImage) {
-        const chartSize = 100; // 100mm square for the chart
+        // Increased chart size to fill width (A4 width 210mm - margins 28mm = 182mm max)
+        const chartSize = 170;
         const chartX = (pageWidth - chartSize) / 2;
         doc.addImage(chartImage, 'JPEG', chartX, currentY, chartSize, chartSize);
         currentY += chartSize + 5;
@@ -288,7 +273,8 @@ export const generateComparisonPdf = async (
             doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(74, 46, 36);
-            doc.text(`#${cluster.id} ${cluster.name}`, marginLeft, currentY);
+            const translatedName = translateAttribute(cluster.name, language);
+            doc.text(`#${cluster.id} ${translatedName}`, marginLeft, currentY);
 
             // Avg Quality badge
             doc.setFontSize(9);
@@ -300,7 +286,8 @@ export const generateComparisonPdf = async (
             if (cluster.dominantTraits.length > 0) {
                 doc.setFontSize(9);
                 doc.setTextColor(100, 100, 100);
-                doc.text(`${t('Characterized by', 'Caracterizado por')}: ${cluster.dominantTraits.join(', ')}`, marginLeft, currentY);
+                const translatedTraits = cluster.dominantTraits.map(t => translateAttribute(t, language)).join(', ');
+                doc.text(`${t('Characterized by', 'Caracterizado por')}: ${translatedTraits}`, marginLeft, currentY);
                 currentY += 6;
             }
 

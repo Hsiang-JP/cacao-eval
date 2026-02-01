@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GradingSession, FlavorAttribute } from '../types';
+import { ATTRIBUTE_LABELS } from '../data/attributes';
 import { Chart, registerables } from 'chart.js';
 import { INITIAL_QUALITY_ATTRIBUTES } from '../constants';
 import { getAttributeColor } from '../utils/colors';
@@ -34,47 +35,18 @@ const generateChartImage = (attributes: FlavorAttribute[], language: 'en' | 'es'
     ];
 
     const getLabel = (id: string, attr: FlavorAttribute | undefined) => {
-      let text = '';
-      if (language === 'es') {
-        switch (id) {
-          case 'roast': text = 'TOSTADO'; break;
-          case 'acidity': text = 'ACIDEZ'; break;
-          case 'fresh_fruit': text = 'FRUTA FRESCA'; break; // Simplified for single line
-          case 'browned_fruit': text = 'FRUTA MARRÓN'; break;
-          case 'vegetal': text = 'VEGETAL'; break;
-          case 'floral': text = 'FLORAL'; break;
-          case 'woody': text = 'MADERA'; break;
-          case 'spice': text = 'ESPECIA'; break;
-          case 'nutty': text = 'NUEZ'; break;
-          case 'caramel': text = 'CARAMELO / PANELA'; break;
-          case 'sweetness': text = 'DULZOR'; break;
-          case 'defects': text = 'SABORES ATÍPICOS'; break;
-          case 'cacao': text = 'CACAO'; break;
-          case 'bitterness': text = 'AMARGOR'; break;
-          case 'astringency': text = 'ASTRINGENCIA'; break;
-          default: text = attr ? attr.nameEs : id;
-        }
-      } else {
-        switch (id) {
-          case 'roast': text = 'ROAST'; break;
-          case 'acidity': text = 'ACIDITY'; break;
-          case 'fresh_fruit': text = 'FRESH FRUIT'; break;
-          case 'browned_fruit': text = 'BROWNED FRUIT'; break;
-          case 'vegetal': text = 'VEGETAL'; break;
-          case 'floral': text = 'FLORAL'; break;
-          case 'woody': text = 'WOODY'; break;
-          case 'spice': text = 'SPICE'; break;
-          case 'nutty': text = 'NUTTY'; break;
-          case 'caramel': text = 'CARAMEL / PANELA'; break;
-          case 'sweetness': text = 'SWEETNESS'; break;
-          case 'defects': text = 'OFF-FLAVOURS'; break;
-          case 'cacao': text = 'CACAO'; break;
-          case 'bitterness': text = 'BITTERNESS'; break;
-          case 'astringency': text = 'ASTRINGENCIA'; break;
-          default: text = attr ? attr.nameEn : id;
-        }
+      // 1. Try generic attribute labels (covers core, specific attributes)
+      if (ATTRIBUTE_LABELS[id]) {
+        return language === 'es' ? ATTRIBUTE_LABELS[id].es.toUpperCase() : ATTRIBUTE_LABELS[id].en.toUpperCase();
       }
-      return text;
+
+      // 2. Fallback to attribute instance name (custom attributes)
+      if (attr) {
+        return language === 'es' ? attr.nameEs.toUpperCase() : attr.nameEn.toUpperCase();
+      }
+
+      // 3. Fallback to ID
+      return id.toUpperCase();
     };
 
     const chartLabels = order.map(id => {
@@ -424,7 +396,7 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
       doc.setFont("helvetica", "bold");
       doc.text(`${swallow.toFixed(1)}s`, swallowX, currentY + 5, { align: 'center' });
       doc.setFont("helvetica", "normal");
-      doc.text(`${total.toFixed(0)}s`, timelineX + timelineW, currentY + 5, { align: 'right' });
+      doc.text(`${total.toFixed(1)}s`, timelineX + timelineW, currentY + 5, { align: 'right' });
 
       currentY += 15;
 
@@ -505,111 +477,132 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
         });
 
         currentY = (doc as any).lastAutoTable.finalY + 10;
-      }
+        // RECALCULATION STAGE:
+        // Backward Compatibility for legacy sessions (missing fields OR legacy string suggestions)
+        if (session.tdsProfile) {
+          const needsRecalc = !analysis ||
+            analysis.aromaPercent === undefined ||
+            analysis.aftertastePercent === undefined ||
+            (analysis.kickSuggestions && analysis.kickSuggestions.some(s => typeof s === 'string')) ||
+            (analysis.qualitySuggestions && analysis.qualitySuggestions.some(s => typeof s === 'string'));
 
+          if (needsRecalc) {
+            console.log(`[PDF] Recalculating analysis for sample ${i + 1} due to missing fields or legacy format.`);
+            analysis = analyzeTDS(
+              session.tdsProfile.events,
+              session.tdsProfile.swallowTime,
+              session.tdsProfile.totalDuration,
+              session.tdsProfile.mode
+            );
+          }
+        }
+        // 4. Aroma Insights (if available)
+        if (analysis && analysis.aromaNotes.length > 0) {
+          // Resolve names
+          const aromaNames = analysis.aromaNotes.map(id => {
+            // Find attribute
+            const attr = session.attributes.find(a => a.id === id) ||
+              session.attributes.flatMap(a => a.subAttributes || []).find(s => s.id === id);
 
-      // 4. Aroma Insights (if available)
-      if (analysis && analysis.aromaNotes.length > 0) {
-        // Resolve names
-        const aromaNames = analysis.aromaNotes.map(id => {
-          // Find attribute
-          const attr = session.attributes.find(a => a.id === id) ||
-            session.attributes.flatMap(a => a.subAttributes || []).find(s => s.id === id);
+            if (!attr) return id;
+            // Need to handle if it's a subAttribute vs attribute
+            // The 'attr' found might be a subAttribute which has nameEn/nameEs
+            return isEs ? (attr as any).nameEs : (attr as any).nameEn;
+          });
 
-          if (!attr) return id;
-          // Need to handle if it's a subAttribute vs attribute
-          // The 'attr' found might be a subAttribute which has nameEn/nameEs
-          return isEs ? (attr as any).nameEs : (attr as any).nameEn;
-        });
+          const aromaText = aromaNames.join(", ");
+          if (aromaText) {
+            const title = t(`Dominant Aromas (${analysis.aromaPercent}%)`, `Aromas Dominantes (${analysis.aromaPercent}%)`);
+            addTextSection(title, aromaText);
+          }
+        }
 
-        const aromaText = aromaNames.join(", ");
-        if (aromaText) {
-          addTextSection(t("Dominant Aromas (Attack Phase)", "Aromas Dominantes (Fase de Ataque)"), aromaText);
+        // 5. Dominant Aftertaste + Aftertaste Boosts
+        if (analysis) {
+          const attrLabels: Record<string, { en: string; es: string }> = {
+            cacao: { en: 'Cacao', es: 'Cacao' },
+            acidity: { en: 'Acidity', es: 'Acidez' },
+            bitterness: { en: 'Bitterness', es: 'Amargor' },
+            astringency: { en: 'Astringency', es: 'Astringencia' },
+            roast: { en: 'Roast', es: 'Tostado' },
+            fresh_fruit: { en: 'Fresh Fruit', es: 'Fruta Fresca' },
+            browned_fruit: { en: 'Browned Fruit', es: 'Fruta Marrón' },
+            vegetal: { en: 'Vegetal', es: 'Vegetal' },
+            floral: { en: 'Floral', es: 'Floral' },
+            woody: { en: 'Woody', es: 'Madera' },
+            spice: { en: 'Spice', es: 'Especia' },
+            nutty: { en: 'Nutty', es: 'Nuez' },
+            caramel: { en: 'Caramel', es: 'Caramelo' },
+            sweetness: { en: 'Sweetness', es: 'Dulzor' },
+            defects: { en: 'Defects', es: 'Defectos' },
+          };
+
+          // Dominant Aftertaste
+          if (analysis.dominantAftertaste) {
+            const domLabel = attrLabels[analysis.dominantAftertaste]?.[isEs ? 'es' : 'en'] || analysis.dominantAftertaste;
+            const title = t(`Dominant Aftertaste (${analysis.aftertastePercent}%)`, `Post-gusto Dominante (${analysis.aftertastePercent}%)`);
+            addTextSection(title, domLabel);
+          }
+
+          // Aftertaste Boosts (e.g., "Cacao +3, Nutty +2")
+          if (analysis.aftertasteBoosts && analysis.aftertasteBoosts.length > 0) {
+            const boostText = analysis.aftertasteBoosts
+              .map(b => {
+                const label = attrLabels[b.attrId]?.[isEs ? 'es' : 'en'] || b.attrId;
+                return `${label} +${b.amount}`;
+              })
+              .join(', ');
+            addTextSection(t("Aftertaste Boosts", "Refuerzos de Post-gusto"), boostText);
+          }
+
+          // 6. Quality Adjustment (moved to bottom)
+          if (analysis.qualityModifier !== 0) {
+            const modSign = analysis.qualityModifier > 0 ? '+' : '';
+            addTextSection(
+              t("Suggested Global Quality Adjustment", "Ajuste de Calidad Global Sugerido"),
+              `${modSign}${analysis.qualityModifier}`
+            );
+          }
+
+          // 7. Kick Suggestions
+          if (analysis.kickSuggestions && analysis.kickSuggestions.length > 0) {
+            const kickText = analysis.kickSuggestions
+              .map(s => (typeof s === 'string' ? s : s[isEs ? 'es' : 'en']))
+              .join('\n');
+            addTextSection(t("Initial Kick Insights", "Observaciones del Impacto Inicial"), kickText);
+          }
+
+          // 8. Quality Suggestions
+          if (analysis.qualitySuggestions && analysis.qualitySuggestions.length > 0) {
+            const qualityText = analysis.qualitySuggestions
+              .map(s => (typeof s === 'string' ? s : s[isEs ? 'es' : 'en']))
+              .join('\n');
+            addTextSection(t("Aftertaste Quality Insights", "Observaciones de Calidad del Post-gusto"), qualityText);
+          }
         }
       }
 
-      // 5. Dominant Aftertaste + Aftertaste Boosts
-      if (analysis) {
-        const attrLabels: Record<string, { en: string; es: string }> = {
-          cacao: { en: 'Cacao', es: 'Cacao' },
-          acidity: { en: 'Acidity', es: 'Acidez' },
-          bitterness: { en: 'Bitterness', es: 'Amargor' },
-          astringency: { en: 'Astringency', es: 'Astringencia' },
-          roast: { en: 'Roast', es: 'Tostado' },
-          fresh_fruit: { en: 'Fresh Fruit', es: 'Fruta Fresca' },
-          browned_fruit: { en: 'Browned Fruit', es: 'Fruta Marrón' },
-          vegetal: { en: 'Vegetal', es: 'Vegetal' },
-          floral: { en: 'Floral', es: 'Floral' },
-          woody: { en: 'Woody', es: 'Madera' },
-          spice: { en: 'Spice', es: 'Especia' },
-          nutty: { en: 'Nutty', es: 'Nuez' },
-          caramel: { en: 'Caramel', es: 'Caramelo' },
-          sweetness: { en: 'Sweetness', es: 'Dulzor' },
-          defects: { en: 'Defects', es: 'Defectos' },
-        };
-
-        // Dominant Aftertaste
-        if (analysis.dominantAftertaste) {
-          const domLabel = attrLabels[analysis.dominantAftertaste]?.[isEs ? 'es' : 'en'] || analysis.dominantAftertaste;
-          addTextSection(t("Dominant Aftertaste", "Post-gusto Dominante"), domLabel);
-        }
-
-        // Aftertaste Boosts (e.g., "Cacao +3, Nutty +2")
-        if (analysis.aftertasteBoosts && analysis.aftertasteBoosts.length > 0) {
-          const boostText = analysis.aftertasteBoosts
-            .map(b => {
-              const label = attrLabels[b.attrId]?.[isEs ? 'es' : 'en'] || b.attrId;
-              return `${label} +${b.amount}`;
-            })
-            .join(', ');
-          addTextSection(t("Aftertaste Boosts", "Refuerzos de Post-gusto"), boostText);
-        }
-
-        // 6. Quality Adjustment (moved to bottom)
-        if (analysis.qualityModifier !== 0) {
-          const modSign = analysis.qualityModifier > 0 ? '+' : '';
-          addTextSection(
-            t("Suggested Global Quality Adjustment", "Ajuste de Calidad Global Sugerido"),
-            `${modSign}${analysis.qualityModifier}`
-          );
-        }
-
-        // 7. Kick Suggestions
-        if (analysis.kickSuggestions && analysis.kickSuggestions.length > 0) {
-          const kickText = analysis.kickSuggestions.join('\n');
-          addTextSection(t("Initial Kick Insights", "Observaciones del Impacto Inicial"), kickText);
-        }
-        const aftertasteLabel = t("Aftertaste Duration", "Duración Post-gusto");
-
-        // 8. Quality Suggestions
-        if (analysis.qualitySuggestions && analysis.qualitySuggestions.length > 0) {
-          const qualityText = analysis.qualitySuggestions.join('\n');
-          addTextSection(t("Aftertaste Quality Insights", "Observaciones de Calidad del Post-gusto"), qualityText);
-        }
-      }
+      // Sample counter footer
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`${t("Sample", "Muestra")} ${i + 1} / ${sessions.length}`, 14, 290, { align: 'left' });
     }
 
-    // Sample counter footer
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text(`${t("Sample", "Muestra")} ${i + 1} / ${sessions.length}`, 14, 290, { align: 'left' });
-  }
+    // console.log('DEBUG generatePdf customFilename:', customFilename);
+    let filename = customFilename;
+    if (!filename) {
+      const dateStr = getDateStringForFilename();
+      filename = sessions.length === 1
+        ? `CoEx_${sessions[0].metadata.sampleCode || 'Report'}.pdf`
+        : `CoEx_Bulk_Report_${dateStr}.pdf`;
+    }
 
-  // console.log('DEBUG generatePdf customFilename:', customFilename);
-  let filename = customFilename;
-  if (!filename) {
-    const dateStr = getDateStringForFilename();
-    filename = sessions.length === 1
-      ? `CoEx_${sessions[0].metadata.sampleCode || 'Report'}.pdf`
-      : `CoEx_Bulk_Report_${dateStr}.pdf`;
-  }
+    if (!filename.toLowerCase().endsWith('.pdf')) {
+      filename += '.pdf';
+    }
 
-  if (!filename.toLowerCase().endsWith('.pdf')) {
-    filename += '.pdf';
-  }
-
-  doc.save(filename);
-};
+    doc.save(filename);
+  };
 
 
 

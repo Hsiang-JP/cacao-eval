@@ -15,22 +15,31 @@ export default defineConfig(({ mode }) => {
         manifest: {
           name: 'CoEx Digital Grading',
           short_name: 'CoEx Grading',
-          description: 'Cacao of Excellence Digital Evaluation Form',
+          description: 'Cacao of Excellence Digital Evaluation Form - Professional Sensory Analysis Tool',
           theme_color: '#754c29',
           background_color: '#ffffff',
           display: 'standalone',
           orientation: 'portrait',
+          start_url: './',
+          id: '/',
           icons: [
+            {
+              src: 'logo-cacao.svg',
+              sizes: '192x192',
+              type: 'image/svg+xml',
+              purpose: 'any maskable'
+            },
+            {
+              src: 'logo-cacao.svg',
+              sizes: '512x512',
+              type: 'image/svg+xml',
+              purpose: 'any maskable'
+            },
             {
               src: 'logo-cacao.svg',
               sizes: 'any',
               type: 'image/svg+xml',
               purpose: 'any maskable'
-            },
-            {
-              src: 'favicon.png',
-              sizes: '192x192', // Assuming it's at least standard size, or 'any' if unsure
-              type: 'image/png'
             }
           ]
         }
