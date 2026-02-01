@@ -14,6 +14,13 @@ export const TDS_ZONES = {
     FINISH: { start: 1.0, end: Infinity }, // >100%
 };
 
+// Visualization & Smoothing Constants
+export const TDS_VISUALIZATION = {
+    SIGMA_MULTIPLE: 3.0,    // Aggregated Curves Smoothing
+    SILENCE_CONSTANT: 0.5,  // Noise floor
+    SIGMA_SINGLE: 2.0       // Relative Intensity Evolution (Stream Graph) Smoothing
+};
+
 // Significance Thresholds (Chance Level ≈ 6.67% for 15 attributes)
 export const SIGNIFICANCE_LEVEL = 6.7;
 

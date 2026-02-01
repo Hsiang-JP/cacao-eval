@@ -153,10 +153,11 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
     }, [handleAttrSelect]);
 
     const handleButtonStop = useCallback((attrId: string) => {
-        // Since press-and-hold is no longer used, and we forced inputMethod='mouse',
-        // this callback is effectivey unused or no-op. 
-        // We keep it empty to satisfy the TDSButton interface if needed.
-    }, []);
+        // Handle toggle off (mouse mode latch behavior)
+        if (currentAttr === attrId) {
+            stopCurrentAttr();
+        }
+    }, [currentAttr, stopCurrentAttr]);
 
     // Start tasting
     const handleStart = () => {
@@ -218,7 +219,7 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-gray-900 flex flex-col">
+        <div className="fixed inset-0 z-[100] bg-gray-900 flex flex-col h-dvh">
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-gray-800">
                 <div className="flex items-center gap-3">
@@ -239,16 +240,23 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
             </div>
 
             {/* Timer Display */}
-            <div className="flex-none py-6 text-center">
+            <div className="flex-none py-2 text-center">
+
+                {/* Swallow Time - Fixed Height Wrapper to prevent layout shift */}
+                <div className="h-6 flex items-center justify-center mb-1">
+                    {swallowTime !== null ? (
+                        <div className="text-amber-400 text-sm font-medium animate-fade-in">
+                            {language === 'es' ? 'Tragado a' : 'Swallowed at'} {formatTime(swallowTime)}
+                        </div>
+                    ) : (
+                        <div className="text-transparent text-sm select-none">Placeholder</div>
+                    )}
+                </div>
+
                 <TDSTimer
                     startTime={startTimeRef.current}
                     isRunning={state === 'tasting' || state === 'swallowed'}
                 />
-                {swallowTime !== null && (
-                    <div className="text-amber-400 text-sm mt-2">
-                        {language === 'es' ? 'Tragado a' : 'Swallowed at'} {formatTime(swallowTime)}
-                    </div>
-                )}
 
                 {/* Stable Layout Container for Active Attribute */}
                 <div className="mt-3 h-10 flex items-center justify-center">
@@ -276,16 +284,14 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                 </div>
             )}
 
-            {/* Attribute Buttons Grid - LOCKED during recording */}
+            {/* Attribute Buttons Grid */}
             <div
-                className={`flex-1 px-4 pb-4 ${state === 'idle' ? 'overflow-auto' : 'overflow-hidden'}`}
+                className={`flex-1 px-2 pb-2 ${state === 'idle' ? 'overflow-auto' : 'overflow-hidden'}`}
                 style={{
-                    // Prevent any touch scroll/drag during recording
                     touchAction: state !== 'idle' ? 'none' : 'auto',
                     overscrollBehavior: 'none',
                 }}
                 onTouchMove={(e) => {
-                    // Prevent scroll/swipe during recording
                     if (state === 'tasting' || state === 'swallowed') {
                         e.preventDefault();
                     }
@@ -302,11 +308,19 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                     </div>
                 ) : (
                     <div
-                        className={`grid gap-3 ${mode === 'normal' ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5'}`}
-                        style={{ touchAction: 'none' }}
+                        // Compact Grid: 3 cols on mobile.
+                        // Rows are calculated to fill the available height evenly.
+                        className={`grid gap-2 h-full ${mode === 'normal' ? 'grid-cols-3' : 'grid-cols-3 sm:grid-cols-5'}`}
+                        style={{
+                            touchAction: 'none',
+                            gridTemplateRows: mode === 'normal'
+                                ? 'repeat(2, 1fr)'  // 5 items, 3 cols -> 2 rows
+                                : 'repeat(5, 1fr)'  // 15 items, 3 cols -> 5 rows (on mobile)
+                        }}
                     >
                         {attributes.map(attrId => {
                             const isActive = currentAttr === attrId;
+                            // color is already imported
                             const color = getAttributeColor(attrId);
 
                             return (
@@ -315,7 +329,7 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                                     attrId={attrId}
                                     label={ATTRIBUTE_LABELS[attrId]?.[language] || attrId}
                                     color={color}
-                                    inputMethod={inputMethod} // Currently forced to 'mouse' in component state, but component supports both
+                                    inputMethod={inputMethod}
                                     isActive={isActive}
                                     onStart={handleButtonStart}
                                     onStop={handleButtonStop}
@@ -327,27 +341,34 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                 )}
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons - Fixed at bottom */}
             {(state === 'tasting' || state === 'swallowed') && (
-                <div className="flex-none p-4 bg-gray-800 flex gap-3">
-                    {state === 'tasting' && (
-                        <button
-                            onClick={handleSwallow}
-                            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
-                        >
-                            {language === 'es' ? 'Tragar' : 'Swallow'}
-                        </button>
-                    )}
+                <div className="flex-none p-2 bg-gray-800 flex gap-2 pb-safe">
+                    <button
+                        onClick={handleSwallow}
+                        disabled={state !== 'tasting'}
+                        className={`flex-1 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors ${state === 'tasting'
+                            ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                            : 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
+                            }`}
+                    >
+                        {language === 'es' ? 'Tragar' : 'Swallow'}
+                    </button>
+
                     <button
                         onClick={handleFinish}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
                     >
                         {language === 'es' ? 'Terminar' : 'Finish'}
                     </button>
                 </div>
             )}
 
-            {/* Removed Input Method Indicator */}
+            {/* Combined CSS for dynamic viewport height */}
+            <style>{`
+                .h-dvh { height: 100vh; height: 100dvh; }
+                .pb-safe { padding-bottom: env(safe-area-inset-bottom, 1rem); }
+            `}</style>
         </div>
     );
 };

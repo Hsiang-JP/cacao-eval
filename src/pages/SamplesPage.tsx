@@ -4,7 +4,7 @@ import { dbService, StoredSample } from '../services/dbService';
 import { getDateStringForFilename } from '../utils/dateUtils';
 import Header from '../components/Header';
 import { TRANSLATIONS } from '../constants';
-import { Search, Trash2, Calendar, User, FileText, CheckSquare, Square, BarChart2, Upload, Download } from 'lucide-react';
+import { Search, Trash2, Calendar, User, FileText, CheckSquare, Square, BarChart2, Upload, Download, Plus } from 'lucide-react';
 import SampleLibraryCard from '../components/samples/SampleLibraryCard';
 import Papa from 'papaparse';
 import { CSV_HEADERS_EN, CSV_HEADERS_ES } from '../constants';
@@ -63,10 +63,27 @@ const SamplesPage: React.FC = () => {
         });
     };
 
-    const filteredSamples = samples.filter(s =>
-        s.sampleCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.evaluator.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredSamples = samples.filter(s => {
+        const query = searchTerm.toLowerCase().trim();
+        // Special "keyword" search for TDS
+        if (query === 'tds') {
+            return s.tdsProfile && s.tdsProfile.events && s.tdsProfile.events.length > 0;
+        }
+        return s.sampleCode.toLowerCase().includes(query) ||
+            s.evaluator.toLowerCase().includes(query);
+    });
+
+    const hasTdsData = selectedIds.size > 0 && Array.from(selectedIds).every(id => {
+        const sample = samples.find(s => s.id === id);
+        // Check if sample exists and has a non-empty tdsProfile
+        return sample?.tdsProfile && Object.keys(sample.tdsProfile).length > 0;
+    });
+
+    const handleTDSClick = () => {
+        if (selectedIds.size === 0 || !hasTdsData) return;
+        const ids = Array.from(selectedIds).join(',');
+        navigate(`/tds-deep?ids=${ids}`);
+    };
 
     const handleCompare = () => {
         if (selectedIds.size < 2) {
@@ -256,73 +273,110 @@ const SamplesPage: React.FC = () => {
             <main className="w-full px-4 md:px-8 space-y-6 mb-8 flex-grow">
 
                 {/* Actions Bar */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-cacao-100">
-                    <div className="relative w-full md:w-96">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder={t.searchSamples || "Search samples..."}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cacao-500"
-                        />
-                    </div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-cacao-100 flex flex-col gap-4">
 
-                    <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
-
-                        <button
-                            onClick={handleImportClick}
-                            className="bg-white border border-cacao-200 text-cacao-700 font-bold py-2 px-3 rounded-lg shadow-sm hover:bg-cacao-50 transition-colors flex items-center justify-center gap-2"
-                            title={t.importSamples}
-                        >
-                            <Upload size={20} />
-                        </button>
-                        <button
-                            onClick={handleExport}
-                            className="bg-white border border-cacao-200 text-cacao-700 font-bold py-2 px-3 rounded-lg shadow-sm hover:bg-cacao-50 transition-colors flex items-center justify-center gap-2"
-                            title={t.exportAllCSV}
-                        >
-                            <Download size={20} />
-                        </button>
-
-                        {/* Selection Count Indicator - Moved here */}
-                        <div className={`px-3 py-2 rounded-lg border text-sm font-bold flex items-center shadow-sm transition-all duration-300 ${selectedIds.size > 0
-                            ? 'bg-cacao-100 text-cacao-800 border-cacao-200'
-                            : 'bg-gray-50 text-gray-400 border-gray-100'
-                            }`}>
-                            {selectedIds.size} {language === 'es' ? 'Seleccionadas' : 'Selected'}
+                    {/* Responsive Layout: Search stacks on mobile, side-by-side on desktop */}
+                    <div className="flex flex-col lg:flex-row justify-between gap-4">
+                        <div className="relative w-full lg:w-96 flex-shrink-0">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                            <input
+                                type="text"
+                                placeholder={t.searchSamples || "Search samples..."}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cacao-500 focus:bg-white transition-all"
+                            />
                         </div>
 
-                        <button
-                            onClick={handleBulkPdf}
-                            disabled={selectedIds.size === 0}
-                            className={`font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center ${selectedIds.size === 0
-                                ? 'bg-amber-200 text-white cursor-not-allowed opacity-50'
-                                : 'bg-amber-600 hover:bg-amber-700 text-white'
-                                }`}
-                            title={language === 'es' ? "Descargar PDF" : "Download PDF"}
-                        >
-                            PDF
-                        </button>
+                        {/* Actions Container */}
+                        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
 
-                        <button
-                            onClick={handleCompare}
-                            disabled={selectedIds.size < 2}
-                            className={`font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center ${selectedIds.size < 2
-                                ? 'bg-cacao-300 text-white cursor-not-allowed opacity-50'
-                                : 'bg-cacao-800 hover:bg-cacao-900 text-white'
-                                }`}
-                            title={t.compare || "Compare"}
-                        >
-                            {t.compare || "Compare"}
-                        </button>
+                            {/* Group 1: File Actions (Import/Export) */}
+                            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
+                                <button
+                                    onClick={handleImportClick}
+                                    className="p-2 text-cacao-700 hover:bg-white hover:text-cacao-900 hover:shadow-sm rounded-md transition-all"
+                                    title={t.importSamples}
+                                >
+                                    <Upload size={20} />
+                                </button>
+                                <div className="w-px h-6 bg-gray-200"></div>
+                                <button
+                                    onClick={handleExport}
+                                    className="p-2 text-cacao-700 hover:bg-white hover:text-cacao-900 hover:shadow-sm rounded-md transition-all"
+                                    title={t.exportAllCSV}
+                                >
+                                    <Download size={20} />
+                                </button>
+                            </div>
 
-                        <button
-                            onClick={() => navigate('/evaluate')}
-                            className="bg-cacao-600 hover:bg-cacao-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors flex items-center justify-center"
-                        >
-                            {t.newEvaluation}
-                        </button>
+                            {/* Group 2: Selection & Reports */}
+                            <div className="flex flex-wrap items-center gap-2">
+                                {/* Selection / Clear Button */}
+                                <button
+                                    onClick={() => setSelectedIds(new Set())}
+                                    disabled={selectedIds.size === 0}
+                                    className={`px-3 py-2.5 rounded-xl border text-sm font-bold flex items-center gap-2 transition-all duration-200 ${selectedIds.size > 0
+                                        ? 'bg-cacao-100 text-cacao-900 border-cacao-200 hover:bg-cacao-200 hover:border-cacao-300 cursor-pointer shadow-sm'
+                                        : 'bg-gray-50 text-gray-400 border-gray-100 cursor-default opacity-60'
+                                        }`}
+                                    title="Clear Selection"
+                                >
+                                    {selectedIds.size > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
+                                    <span className="hidden sm:inline">{selectedIds.size} {language === 'es' ? 'Seleccionadas' : 'Selected'}</span>
+                                    <span className="sm:hidden">{selectedIds.size}</span>
+                                </button>
+
+                                {/* TDS Button */}
+                                <button
+                                    onClick={handleTDSClick}
+                                    disabled={selectedIds.size === 0 || !hasTdsData}
+                                    className={`font-bold py-2.5 px-4 rounded-xl shadow-sm transition-colors ${selectedIds.size > 0 && hasTdsData
+                                        ? 'bg-orange-500 hover:bg-orange-600 text-white border-transparent'
+                                        : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                                        }`}
+                                    title={hasTdsData ? "TDS Analysis" : "No TDS Data"}
+                                >
+                                    TDS
+                                </button>
+
+                                {/* PDF Button */}
+                                <button
+                                    onClick={handleBulkPdf}
+                                    disabled={selectedIds.size === 0}
+                                    className={`font-bold py-2.5 px-4 rounded-xl shadow-sm transition-colors ${selectedIds.size === 0
+                                        ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                                        : 'bg-amber-600 hover:bg-amber-700 text-white border border-transparent'
+                                        }`}
+                                    title={language === 'es' ? "Descargar PDF" : "Download PDF"}
+                                >
+                                    PDF
+                                </button>
+                            </div>
+
+                            {/* Group 3: Primary Actions */}
+                            <div className="flex items-center gap-2 ml-auto lg:ml-0">
+                                <button
+                                    onClick={handleCompare}
+                                    disabled={selectedIds.size < 2}
+                                    className={`font-bold py-2.5 px-5 rounded-xl shadow-md transition-colors ${selectedIds.size < 2
+                                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                        : 'bg-white text-cacao-800 border-2 border-cacao-800 hover:bg-cacao-50'
+                                        }`}
+                                >
+                                    {t.compare || "Compare"}
+                                </button>
+
+                                {/* New Evaluation - Compact Button */}
+                                <button
+                                    onClick={() => navigate('/evaluate')}
+                                    className="bg-cacao-600 hover:bg-cacao-700 text-white font-bold p-2.5 rounded-xl shadow-md transition-colors flex items-center justify-center aspect-square"
+                                    title={t.newEvaluation}
+                                >
+                                    <Plus size={24} />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

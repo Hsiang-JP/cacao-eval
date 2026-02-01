@@ -11,13 +11,19 @@ interface SampleLibraryCardProps {
     isSelected: boolean;
     onToggleSelect: (id: string) => void;
     onDelete?: (id: string, code: string) => void;
+    hideDetails?: boolean;
+    compact?: boolean; // New prop for denser layouts
+    showChart?: boolean;
 }
 
 const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
     sample,
     isSelected,
     onToggleSelect,
-    onDelete
+    onDelete,
+    hideDetails = false,
+    compact = false,
+    showChart = true
 }) => {
     const { language, t } = useLanguage();
     const [isExpanded, setIsExpanded] = useState(false);
@@ -36,7 +42,7 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
     };
 
     return (
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-cacao-100 hover:shadow-md transition-shadow relative group/card overflow-hidden">
+        <div className={`bg-white rounded-xl shadow-sm border border-cacao-100 hover:shadow-md transition-shadow relative group/card overflow-hidden h-full flex flex-col w-full ${compact ? 'p-3' : 'p-4'}`}>
 
             {/* Header: Checkbox, Code, Type, Score */}
             <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
@@ -83,7 +89,7 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
 
                 {/* Right side: Score + Delete - Fixed width on mobile */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end min-w-[3rem]">
                         <span className="text-2xl sm:text-3xl font-mono font-bold text-cacao-800 leading-none">{sample.globalQuality}</span>
                         <span className="text-[9px] sm:text-[10px] uppercase text-gray-400 font-bold mt-0.5">Score</span>
                     </div>
@@ -104,23 +110,27 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
             </div>
 
             {/* Chart Section (Preview) */}
-            <div className="mb-2 border border-pink-200 rounded-lg p-2 bg-white" style={{ minHeight: '150px' }}>
-                <IndividualBarChart
-                    sample={sample}
-                    orientation="vertical"
-                    height={150}
-                />
-            </div>
+            {showChart && (
+                <div className="mb-2 border border-pink-200 rounded-lg p-2 bg-white" style={{ minHeight: '150px' }}>
+                    <IndividualBarChart
+                        sample={sample}
+                        orientation="vertical"
+                        height={150}
+                    />
+                </div>
+            )}
 
             {/* Toggle Button */}
-            <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full text-left py-2 text-cacao-700 font-bold text-lg hover:text-cacao-900 flex items-center justify-between group"
-            >
-                <span>{t.viewDetails || "View Details"}</span>
-                {/* Optional Chevron if desired, implies action */}
-                {/* <ChevronDown size={20} className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} /> */}
-            </button>
+            {!hideDetails && (
+                <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="w-full text-left py-2 text-cacao-700 font-bold text-lg hover:text-cacao-900 flex items-center justify-between group mt-auto"
+                >
+                    <span>{t.viewDetails || "View Details"}</span>
+                    {/* Optional Chevron if desired, implies action */}
+                    {/* <ChevronDown size={20} className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} /> */}
+                </button>
+            )}
 
             {/* Expanded Details: Attribute Grid */}
             {isExpanded && (

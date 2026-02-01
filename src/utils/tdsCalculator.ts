@@ -275,6 +275,23 @@ const analyzeByZone = (events: TDSEvent[], swallowTime: number): ZoneAnalysis =>
 
 
 /**
+ * Helper: Calculate boost amount based on aftertaste duration and dominance.
+ */
+const calculateBoost = (finishTime: number, finishDuration: number): number => {
+    if (finishDuration <= FINISH_SIGNIFICANT_DURATION || finishTime <= 0) return 0;
+
+    let boost = 0;
+    // Criteria 1 & 2: Duration thresholds
+    if (finishTime > FINISH_DOMINANT_DURATION) boost += 2;
+    else if (finishTime > FINISH_SIGNIFICANT_DURATION) boost += 1;
+
+    // Criteria 3: Relative dominance in aftertaste (> 50%)
+    if ((finishTime / finishDuration) > 0.5) boost += 1;
+
+    return boost;
+};
+
+/**
  * Complete TDS analysis with 3-phase zones and hierarchical aggregation.
  */
 export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
@@ -294,7 +311,6 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
     }
 
     // Adjust timings relative to effective start
-    // If fallback was used, effectiveSwallowTime IS rawTotalDuration.
     const swallowTime = Math.max(0, effectiveSwallowTime - startTime);
     const totalDuration = Math.max(0, effectiveTotalDuration - startTime);
 
@@ -312,7 +328,6 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
     const attackDuration = swallowTime * TDS_ZONES.ATTACK.end;
     const bodyDuration = swallowTime * (TDS_ZONES.BODY.end - TDS_ZONES.BODY.start);
     // Post-swallow duration. 
-    // IF fallback used: totalDuration == swallowTime => finishDuration = 0. Correct.
     const finishDuration = Math.max(0, totalDuration - swallowTime);
 
     // -------------------------------------------------------------------------
@@ -328,7 +343,6 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
         const finishTime = zones.finish.get(attrId) || 0;
 
         // Base Calculation: Dominance during "In-Mouth" phase (Attack + Body)
-        // Denominator is SwallowTime (100% of oral processing)
         const inMouthTime = attackTime + bodyTime;
         const durationPercent = swallowTime > 0 ? (inMouthTime / swallowTime) * 100 : 0;
 
@@ -337,54 +351,33 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
         const category = isDefect ? 'defect' : isCore ? 'core' : 'complementary';
 
         let score = mapDurationToScore(durationPercent, category, mode);
-        const originalScore = score;
-        let boostDetails: { amount: number; duration: number; type: 'individual' | 'aggregated'; reason?: 'aftertaste' | 'composition' | 'mixed' } | undefined = undefined;
 
         // -------------------------------------------------------------------------
         // 2. Post-Swallow Boost (The Finish)
         // -------------------------------------------------------------------------
-        // "If an attribute is dominant for a significant duration in the aftertaste..."
+        // Calculate boost using helper
+        const accumulatedBoost = calculateBoost(finishTime, finishDuration);
 
-        // Calculate Finish Dominance % (Relative to Finish Phase Duration if > 5s, else 0)
-        // Let's use absolute seconds for stability.
+        let boostDetails: TDSScoreResult['boostDetails'] = undefined;
 
-        if (finishDuration > FINISH_SIGNIFICANT_DURATION && finishTime > 0) { // Only boost if finish phase was meaningful
-
-            // Criteria 1: Significant Presence (> 5 seconds) -> Small Boost (+1)
-            // Criteria 2: Major Dominance (> 10 seconds) -> Large Boost (+2)
-            // Criteria 3: Dominance % of Aftertaste Phase (> 30%) -> Boost (+1)
-
-            let accumulatedBoost = 0;
-            const finishPercent = (finishTime / finishDuration) * 100;
-
-            if (finishTime > FINISH_DOMINANT_DURATION) accumulatedBoost += 2;
-            else if (finishTime > FINISH_SIGNIFICANT_DURATION) accumulatedBoost += 1;
-
-            // Additional boost for dominating the aftertaste context
-            if (finishPercent > 50) accumulatedBoost += 1;
-
-            if (accumulatedBoost > 0) {
-                // Apply boost as recommendation ONLY (Do not modify score)
-                boostDetails = {
-                    amount: accumulatedBoost,
-                    duration: Math.round(finishTime * 10) / 10,
-                    type: 'individual',
-                    reason: 'aftertaste'
-                };
-            }
+        if (accumulatedBoost > 0) {
+            boostDetails = {
+                amount: accumulatedBoost,
+                duration: Math.round(finishTime * 10) / 10,
+                type: 'individual',
+                reason: 'aftertaste'
+            };
         }
 
         // Recalculate full duration including finish for visibility
         const totalRaw = inMouthTime + finishTime;
-
-        // Sanity Check: Ensure in-mouth percentage doesn't exceed 100% due to floating point or rare edge cases
         const finalDurationPercent = Math.min(durationPercent, 100);
 
         scores.set(attrId, {
             score,
             durationPercent: Math.round(finalDurationPercent * 10) / 10,
             totalDuration: Math.round(totalRaw * 10) / 10,
-            isPresent: totalRaw > MIN_DURATION_FOR_PRESENCE, // Lower threshold to catch quick clicks
+            isPresent: totalRaw > MIN_DURATION_FOR_PRESENCE,
             isFlagged: isCore && finalDurationPercent === 0,
             category,
             originalScore: undefined,
@@ -400,7 +393,6 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
     // -------------------------------------------------------------------------
     // 3. Aggregated Core Scores (Expert mode Parent-Child)
     // -------------------------------------------------------------------------
-    // Note: Expert mode Core Scores also need boost logic!
     const coreScores = new Map<string, TDSScoreResult>();
 
     if (mode === 'expert') {
@@ -413,100 +405,78 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
             // -------------------------------------------------------------------------
             // 3a. Parent-Child Aggregation (Expert Mode)
             // -------------------------------------------------------------------------
-            // "Specific notes contribute to broader categories automatically."
-
             const children = PARENT_CHILD_MAPPING[coreAttr] || [];
-            let childDuration = 0;
             let childFinishTotal = 0;
             let childBoost = 0;
 
-            const activeChildren: string[] = [];
-
             if (children.length > 0) {
-                // Sum duration of valid child attributes
+                // Only loop for Boost calculations (Finish Phase)
                 for (const childId of children) {
-                    const cBody = zones.body.get(childId) || 0;
-                    const cAttack = zones.attack.get(childId) || 0;
-                    childDuration += (cBody + cAttack);
-
-                    if (cBody + cAttack > 0) activeChildren.push(childId);
-
-                    // Child Boost (Aftertaste)
                     const cFinish = zones.finish.get(childId) || 0;
-                    if (finishDuration > FINISH_SIGNIFICANT_DURATION && cFinish > 0) {
-                        childFinishTotal += cFinish; // Accumulate finish duration
-
-                        // "If a child attribute lingers... it boosts the parent."
-                        let cb = 0;
-                        if (cFinish > FINISH_DOMINANT_DURATION) cb += 2;
-                        else if (cFinish > FINISH_SIGNIFICANT_DURATION) cb += 1;
-                        if ((cFinish / finishDuration) > 0.5) cb += 1; // Dominant finish
-
-                        if (cb > 0) childBoost += cb;
+                    if (cFinish > 0) {
+                        childFinishTotal += cFinish;
+                        childBoost += calculateBoost(cFinish, finishDuration);
                     }
                 }
             }
 
-            // TOTAL Duration
-            // UPDATED: No Parent-Child Aggregation for Scores. 
-            // Child durations are used for Boosts only.
-            // totalDuration = selfTotal.
+            // TOTAL Duration (Self Only for Score)
             const totalDuration = selfTotal;
             const finalDurationPercent = swallowTime > 0 ? (totalDuration / swallowTime) * 100 : 0;
 
-            // Map Score (Expert logic handles aggregation, but score mapping itself is standard Expert Core)
+            // Map Score
             let score = mapDurationToScore(finalDurationPercent, 'core', 'expert');
-            const originalScore = score; // Track original before modifications
+            const originalScore = score;
 
             // -------------------------------------------------------------------------
             // 3b. Boost Calculations (Parent-Child)
             // -------------------------------------------------------------------------
-
-            let boostDetails: { amount: number; duration: number; type: 'individual' | 'aggregated'; reason?: 'aftertaste' | 'composition' | 'mixed' } | undefined = undefined;
-            let accumulatedBoost = 0;
-            let boostFromAftertaste = 0;
-
-            // Boost Logic ... (Existing)
             const selfFinish = zones.finish.get(coreAttr) || 0;
-            if (finishDuration > FINISH_SIGNIFICANT_DURATION && selfFinish > 0) {
-                // ... logic
-            }
-            // ... (rest of boost logic)
 
-            // Update Map
-            if (coreScores.has(coreAttr)) {
-                coreScores.set(coreAttr, {
-                    ...coreScores.get(coreAttr)!,
-                    score,
-                    durationPercent: Math.round(finalDurationPercent * 10) / 10,
-                    totalDuration: Math.round(totalDuration * 10) / 10,
-                    isPresent: totalDuration > 0, // Ensure visibility if any duration exists
-                    originalScore
-                });
-            }
+            // 1. Self Boost
+            const selfBoost = calculateBoost(selfFinish, finishDuration);
 
+            // 2. Total Boost
+            const accumulatedBoost = selfBoost + childBoost;
+
+            let boostDetails: TDSScoreResult['boostDetails'] = undefined;
+            if (accumulatedBoost > 0) {
+                boostDetails = {
+                    amount: accumulatedBoost,
+                    duration: Math.round((selfFinish + childFinishTotal) * 10) / 10,
+                    type: 'aggregated',
+                    reason: selfBoost > 0 ? 'aftertaste' : 'mixed'
+                };
+            }
 
             coreScores.set(coreAttr, {
                 score,
                 durationPercent: Math.round(finalDurationPercent * 10) / 10,
-                isFlagged: finalDurationPercent === 0, // Flag if 0
+                totalDuration: Math.round(totalDuration * 10) / 10,
+                isPresent: totalDuration > 0,
+                isFlagged: finalDurationPercent === 0,
                 category: 'core',
-                originalScore: undefined,
+                originalScore,
                 boostDetails
             });
         }
     } else {
-        // Normal mode: Core scores are direct
+        // Normal mode: Copy from individual scores
         for (const coreAttr of CORE_ATTRIBUTES) {
             const existing = scores.get(coreAttr);
             if (existing) {
                 coreScores.set(coreAttr, existing);
             } else {
                 coreScores.set(coreAttr, {
-                    score: 1,
+                    // MapDurationToScore returns 0 for <1.5%. 
+                    // If it wasn't in individual scores, it had 0 duration.
+                    // So Score 0.
                     durationPercent: 0,
+                    totalDuration: 0,
+                    isPresent: false,
                     isFlagged: true,
                     category: 'core',
+                    score: 0
                 });
             }
         }
@@ -669,12 +639,23 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
     }
 
     // Rancid: Sour + Bitter (no Fruit)
-    if (hasFinish('acidity') && hasFinish('bitterness') && !hasFinish('fresh_fruit') && !hasFinish('browned_fruit')) {
+    // Note: In Normal Mode, 'fresh_fruit' is never present. We must be nuanced.
+    const isUnbalancedPotential = hasFinish('acidity') && hasFinish('bitterness') && !hasFinish('fresh_fruit') && !hasFinish('browned_fruit');
+
+    if (isUnbalancedPotential) {
         if ((zones.finish.get('acidity')! + zones.finish.get('bitterness')!) > (finishDuration * 0.5)) {
-            qualitySuggestions.push({
-                en: "Unbalanced, harsh finish (Sour+Bitter without Fruit). Suggest Low Quality.",
-                es: "Final desequilibrado y áspero (Acidez+Amargor sin fruta). Sugiere Baja Calidad."
-            });
+            if (mode === 'expert') {
+                qualitySuggestions.push({
+                    en: "Unbalanced, harsh finish (Sour+Bitter without Fruit). Suggest Low Quality.",
+                    es: "Final desequilibrado y áspero (Acidez+Amargor sin fruta). Sugiere Baja Calidad."
+                });
+            } else {
+                // Normal Mode soft warning
+                qualitySuggestions.push({
+                    en: "Harsh finish (Sour+Bitter). If no Fruit was perceived, suggest Low Quality.",
+                    es: "Final áspero (Acidez+Amargor). Si no se percibió fruta, sugiere Baja Calidad."
+                });
+            }
         }
     }
 
@@ -684,6 +665,14 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
         qualitySuggestions.push({
             en: "Bright, complex finish detected (Fruit+Acid+Sweet). Suggest Global Quality 8–10.",
             es: "Final brillante y complejo detectado (Fruta+Acidez+Dulzor). Sugiere Calidad Global 8–10."
+        });
+    }
+
+    // Normal Mode "Potential Complexity" Hint
+    if (mode === 'normal' && hasFinish('acidity') && hasFinish('cacao') && !hasFinish('bitterness') && !hasFinish('astringency')) {
+        qualitySuggestions.push({
+            en: "Clean Cacao + Acidity finish detected. If fruity notes were present, consider Global Quality 8-10.",
+            es: "Final limpio de Cacao + Acidez. Si hubo notas frutales, considera Calidad Global 8-10."
         });
     }
 

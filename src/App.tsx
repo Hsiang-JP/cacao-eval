@@ -8,6 +8,7 @@ const SamplesPage = lazy(() => import('./pages/SamplesPage'));
 const ComparePage = lazy(() => import('./pages/ComparePage'));
 const ReferencesPage = lazy(() => import('./pages/ReferencesPage'));
 const TDSComparisonPage = lazy(() => import('./pages/TDSComparisonPage'));
+const TDSDeepPage = lazy(() => import('./pages/TDSDeepPage'));
 
 const LoadingFallback = () => (
   <div className="flex h-screen items-center justify-center bg-stone-50">
@@ -27,6 +28,7 @@ const App: React.FC = () => {
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/references" element={<ReferencesPage />} />
             <Route path="/tds-test" element={<TDSComparisonPage />} />
+            <Route path="/tds-deep" element={<TDSDeepPage />} />
           </Routes>
         </Suspense>
       </Router>
