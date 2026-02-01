@@ -6,12 +6,12 @@ export default defineConfig(({ mode }) => {
   // Use '.' instead of process.cwd() to avoid TS error "Property 'cwd' does not exist on type 'Process'"
   const env = loadEnv(mode, '.', '');
   return {
-    base: '', // Relative paths for maximum compatibility
+    base: '/cacao-TDS/', // Project site base path
     plugins: [
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['logo-cacao.svg', 'favicon.png'],
+        includeAssets: ['logo-cacao.svg', 'favicon.png', 'sample_data.csv', 'glossary.json'],
         manifest: {
           name: 'CoEx Digital Grading',
           short_name: 'CoEx Grading',
@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => {
           background_color: '#ffffff',
           display: 'standalone',
           orientation: 'portrait',
-          start_url: './',
-          id: '/',
+          start_url: '.',
+          id: '/cacao-TDS/',
           icons: [
             {
               src: 'logo-cacao.svg',
