@@ -1,7 +1,18 @@
 import { StoredSample } from './dbService';
 import { CSV_HEADERS_EN, CSV_HEADERS_ES, INITIAL_ATTRIBUTES, INITIAL_QUALITY_ATTRIBUTES } from '../constants';
-import { FlavorAttribute, TDSMode, TDSAnalysisResult, TDSScoreResult } from '../types';
-import { parseEventsFromJSON, analyzeTDS } from '../utils/tdsCalculator';
+import { FlavorAttribute, TDSMode, TDSAnalysisResult, TDSScoreResult, TDSEvent } from '../types';
+import { analyzeTDS } from '../utils/tdsCalculator';
+
+/**
+ * Parse TDS events from JSON.
+ */
+const parseEventsFromJSON = (json: string): TDSEvent[] => {
+    try {
+        return JSON.parse(json) as TDSEvent[];
+    } catch {
+        return [];
+    }
+};
 
 // Helper to export TDS intervals as JSON
 const getTDSIntervalsJson = (sample: StoredSample, attrId: string): string => {

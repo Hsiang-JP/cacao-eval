@@ -55,11 +55,11 @@ const ReferencesPage: React.FC = () => {
                             <div className="bg-cacao-100 p-3 rounded-full group-hover:bg-cacao-200 transition-colors">
                                 <FileText className="text-cacao-700" size={24} />
                             </div>
-                            <div>
+                            <div className="min-w-0 flex-1">
                                 <h3 className="font-bold text-cacao-900 group-hover:text-cacao-700 transition-colors">
                                     {content.guideLink[language]}
                                 </h3>
-                                <p className="text-sm text-gray-500 mt-1">
+                                <p className="text-sm text-gray-500 mt-1 break-all">
                                     https://www.cacaoofexcellence.org/info-resources
                                 </p>
                             </div>
@@ -74,11 +74,11 @@ const ReferencesPage: React.FC = () => {
                             <div className="bg-cacao-100 p-3 rounded-full group-hover:bg-cacao-200 transition-colors">
                                 <ExternalLink className="text-cacao-700" size={24} />
                             </div>
-                            <div>
+                            <div className="min-w-0 flex-1">
                                 <h3 className="font-bold text-cacao-900 group-hover:text-cacao-700 transition-colors">
                                     {content.websiteLink[language]}
                                 </h3>
-                                <p className="text-sm text-gray-500 mt-1">
+                                <p className="text-sm text-gray-500 mt-1 break-all">
                                     https://www.cacaoofexcellence.org/
                                 </p>
                             </div>
@@ -102,7 +102,7 @@ const ReferencesPage: React.FC = () => {
                             </p>
                             <p className="text-gray-600">
                                 Food Quality and Preference, 20(3), 216–221.
-                                <a href="https://doi.org/10.1016/j.foodqual.2008.09.006" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
+                                <a href="https://doi.org/10.1016/j.foodqual.2008.09.006" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1 break-all">
                                     https://doi.org/10.1016/j.foodqual.2008.09.006
                                 </a>
                             </p>
@@ -117,7 +117,7 @@ const ReferencesPage: React.FC = () => {
                             </p>
                             <p className="text-gray-600">
                                 Food Quality and Preference, 20(6), 450–455.
-                                <a href="https://doi.org/10.1016/j.foodqual.2009.04.005" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
+                                <a href="https://doi.org/10.1016/j.foodqual.2009.04.005" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1 break-all">
                                     https://doi.org/10.1016/j.foodqual.2009.04.005
                                 </a>
                             </p>
@@ -132,7 +132,7 @@ const ReferencesPage: React.FC = () => {
                             </p>
                             <p className="text-gray-600">
                                 Woodhead Publishing.
-                                <a href="https://doi.org/10.1016/C2017-0-03055-0" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
+                                <a href="https://doi.org/10.1016/C2017-0-03055-0" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1 break-all">
                                     https://doi.org/10.1016/C2017-0-03055-0
                                 </a>
                             </p>

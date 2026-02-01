@@ -310,8 +310,14 @@ export const useGradingSession = (sampleId: string | null) => {
     };
 
     // TDS Integration Helpers
-    const applyTDSData = (profile: TDSProfile, analysisResult: any) => {
-        const updatedAttributes = applyTDSScoresToAttributes(session.attributes, analysisResult.scores);
+    // TDS Integration Helpers
+    const applyTDSData = (profile: TDSProfile, analysisResult: any, applyScores: boolean = true) => {
+        let updatedAttributes = session.attributes;
+
+        if (applyScores) {
+            updatedAttributes = applyTDSScoresToAttributes(session.attributes, analysisResult.scores);
+        }
+
         const updatedProfile = { ...profile, analysis: analysisResult };
 
         setSession(prev => ({

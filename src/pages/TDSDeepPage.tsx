@@ -143,34 +143,29 @@ const TDSDeepPage: React.FC = () => {
                             {/* List of Samples (Card + Timeline) */}
                             <div className="space-y-6">
                                 {samples.map(sample => (
-                                    <div key={sample.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:divide-x divide-gray-100">
+                                    <div key={sample.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        {/* Left: Sample Card Info */}
+                                        <div className="lg:col-span-1">
+                                            <SampleLibraryCard
+                                                sample={sample}
+                                                selectable={false}
+                                                compact
+                                            />
+                                        </div>
 
-                                            {/* Left: Sample Card Info */}
-                                            <div className="lg:col-span-4 p-4 lg:p-6 bg-gray-50/30 flex flex-col justify-center">
-                                                {/* Scaled down slightly to fit nicely */}
-                                                <div className="pointer-events-none transform scale-[0.98] origin-center">
-                                                    <SampleLibraryCard
-                                                        sample={sample}
-                                                        isSelected={true}
-                                                        onToggleSelect={() => { }}
-                                                        hideDetails={true}
-                                                        showChart={false}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Right: Timeline */}
-                                            <div className="lg:col-span-8 p-4 lg:p-6 flex items-center bg-white">
-                                                <div className="w-full pl-0 lg:pl-4">
-                                                    {sample.tdsProfile ? (
-                                                        <TDSTimeline profile={sample.tdsProfile} />
-                                                    ) : (
-                                                        <div className="h-32 flex items-center justify-center text-gray-400 italic bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                                                            {language === 'es' ? 'Sin datos TDS registrados' : 'No TDS data recorded'}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                        {/* Right: Timeline */}
+                                        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+                                            <h3 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">
+                                                {language === 'es' ? 'Línea de Tiempo' : 'Timeline'}
+                                            </h3>
+                                            <div className="w-full">
+                                                {sample.tdsProfile ? (
+                                                    <TDSTimeline profile={sample.tdsProfile} />
+                                                ) : (
+                                                    <div className="h-32 flex items-center justify-center text-gray-400 italic bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                                        {language === 'es' ? 'Sin datos TDS registrados' : 'No TDS data recorded'}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -265,9 +260,7 @@ const SingleViewHandler: React.FC<{ samples: StoredSample[], activeAttributeIds:
                 <div className="lg:col-span-1">
                     <SampleLibraryCard
                         sample={activeSample}
-                        isSelected={false}
-                        onToggleSelect={() => { }}
-                        onDelete={() => { }}
+                        selectable={false}
                         compact
                     />
                 </div>

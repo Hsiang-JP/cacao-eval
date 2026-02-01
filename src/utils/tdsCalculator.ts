@@ -27,7 +27,7 @@ import {
  * Maps Expert mode attributes (children) to Core attributes (parents).
  * When calculating Core scores in Expert mode, child durations are added to parent.
  */
-export const PARENT_CHILD_MAPPING: Record<string, string[]> = {
+const PARENT_CHILD_MAPPING: Record<string, string[]> = {
     // Acidity = Acidity + Fresh Fruit (citrus, berry, tropical)
     acidity: ['acidity', 'fresh_fruit'],
     // Cocoa = Cocoa + Browned Fruit + Nutty + Sweetness (often sweet cacao)
@@ -151,7 +151,6 @@ const mapDurationToScore = (
     // > 30%        -> 8 - 10 (High Dominance)
     if (category === 'complementary') {
         if (durationPercent < 1.5) return 0;
-        if (durationPercent <= 4.0) return 1;
         if (durationPercent <= 4.0) return 1;
         if (durationPercent <= SIGNIFICANCE_LEVEL) return 2;
 
@@ -718,14 +717,6 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
     };
 };
 
-// ============================================================================
-// LEGACY COMPATIBILITY
-// ============================================================================
-
-
-
-
-
 /**
  * Apply TDS scores to attributes.
  */
@@ -746,13 +737,4 @@ export const applyTDSScoresToAttributes = (
 
 
 
-/**
- * Parse TDS events from JSON.
- */
-export const parseEventsFromJSON = (json: string): TDSEvent[] => {
-    try {
-        return JSON.parse(json) as TDSEvent[];
-    } catch {
-        return [];
-    }
-};
+

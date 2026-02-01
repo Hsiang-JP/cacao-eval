@@ -8,8 +8,9 @@ import { useLanguage } from '../../context/LanguageContext';
 
 interface SampleLibraryCardProps {
     sample: StoredSample;
-    isSelected: boolean;
-    onToggleSelect: (id: string) => void;
+    isSelected?: boolean;
+    onToggleSelect?: (id: string) => void;
+    selectable?: boolean;
     onDelete?: (id: string, code: string) => void;
     hideDetails?: boolean;
     compact?: boolean; // New prop for denser layouts
@@ -18,8 +19,9 @@ interface SampleLibraryCardProps {
 
 const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
     sample,
-    isSelected,
+    isSelected = false,
     onToggleSelect,
+    selectable = true,
     onDelete,
     hideDetails = false,
     compact = false,
@@ -48,16 +50,18 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
             <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
                 {/* Left side: Checkbox + Sample Info */}
                 <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-                    <button
-                        onClick={() => onToggleSelect(sample.id)}
-                        className="mt-1 text-gray-400 hover:text-cacao-600 transition-colors flex-shrink-0"
-                    >
-                        {isSelected ? (
-                            <CheckSquare size={22} className="text-cacao-600" />
-                        ) : (
-                            <Square size={22} />
-                        )}
-                    </button>
+                    {selectable && onToggleSelect && (
+                        <button
+                            onClick={() => onToggleSelect(sample.id)}
+                            className="mt-1 text-gray-400 hover:text-cacao-600 transition-colors flex-shrink-0"
+                        >
+                            {isSelected ? (
+                                <CheckSquare size={22} className="text-cacao-600" />
+                            ) : (
+                                <Square size={22} />
+                            )}
+                        </button>
+                    )}
                     <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2 flex-wrap">
                             <h3 className="font-bold text-xl sm:text-2xl text-cacao-900 leading-tight truncate">{sample.sampleCode}</h3>
