@@ -10,16 +10,14 @@ import TDSProfilerModal from '../components/tds/TDSProfilerModal';
 import TDSSummary from '../components/tds/TDSSummary';
 import TDSModeSelector from '../components/tds/TDSModeSelector';
 import { GradingSession, SampleMetadata, QualityAttribute, SubAttribute, TDSMode, TDSProfile, TDSScoreResult, TDSAnalysisResult } from '../types';
-import { applyTDSScoresToAttributes, analyzeTDS } from '../utils/tdsCalculator';
-import {
-  INITIAL_ATTRIBUTES,
-  INITIAL_QUALITY_ATTRIBUTES,
-  TRANSLATIONS,
-} from '../constants';
+// Note: Constants and Calculator imports moved to hooks, but we need INITIAL_ATTRIBUTES for local resets if used
+import { INITIAL_ATTRIBUTES } from '../constants';
 import { RefreshCw, CheckCircle, Play, FileText, ChevronDown, ChevronUp, Save, Plus, Activity } from 'lucide-react';
-import { dbService, StoredSample } from '../services/dbService';
 import { getAttributeColor } from '../utils/colors';
-import { getCurrentISODate, getCurrentTime } from '../utils/dateUtils';
+
+// Custom Hooks
+import { useGradingSession } from '../hooks/useGradingSession';
+import { useTDSControl } from '../hooks/useTDSControl';
 // ChartJS registration is handled in FlavorRadar.tsx
 
 import { useLanguage } from '../context/LanguageContext';
@@ -29,433 +27,46 @@ const EvaluatePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sampleId = searchParams.get('id');
-
-  // const [language, setLanguage] = useState<'en' | 'es'>('en'); // Lifted to App
-  const [isEvaluationStarted, setIsEvaluationStarted] = useState(false);
-  const [isGlobalQualityExpanded, setIsGlobalQualityExpanded] = useState(true);
-  const [showPostSaveModal, setShowPostSaveModal] = useState(false);
-
-  // TDS State
-  const [showTDSModeSelect, setShowTDSModeSelect] = useState(false);
-  const [showTDSProfiler, setShowTDSProfiler] = useState(false);
-  const [showTDSSummary, setShowTDSSummary] = useState(false);
-  const [tdsMode, setTdsMode] = useState<TDSMode>('normal');
-  const [tdsProfile, setTdsProfile] = useState<TDSProfile | null>(null);
-
-  // Reference for the Radar Chart to export image for PDF
   const chartRef = useRef<any>(null);
 
-  // Initial State Setup
-  const getInitialMetadata = (): SampleMetadata => ({
-    sampleCode: '',
-    date: '',
-    time: '',
-    evaluator: '',
-    evaluationType: 'cacao_mass',
-    sampleInfo: '',
-    notes: '',
-    producerRecommendations: ''
-  });
-
-  const [session, setSession] = useState<GradingSession>({
-    metadata: getInitialMetadata(),
-    attributes: JSON.parse(JSON.stringify(INITIAL_ATTRIBUTES)),
-    globalQuality: 0,
-    language: 'en'
-  });
-
-  const [qualityAttributes] = useState<QualityAttribute[]>(
-    JSON.parse(JSON.stringify(INITIAL_QUALITY_ATTRIBUTES))
-  );
-
-  useEffect(() => {
-    setSession(prev => ({ ...prev, language }));
-  }, [language]);
-
-  // Load sample if ID is present
-  useEffect(() => {
-    if (sampleId) {
-      const loadSample = async () => {
-        const storedSample = await dbService.getSample(sampleId);
-        if (storedSample) {
-          setSession({
-            metadata: {
-              sampleCode: storedSample.sampleCode,
-              date: storedSample.date,
-              time: storedSample.time,
-              evaluator: storedSample.evaluator,
-              evaluationType: storedSample.evaluationType,
-              sampleInfo: storedSample.sampleInfo,
-              notes: storedSample.notes,
-              producerRecommendations: storedSample.producerRecommendations
-            },
-            attributes: storedSample.attributes,
-            globalQuality: storedSample.globalQuality,
-            selectedQualityId: storedSample.selectedQualityId,
-            language: language
-          });
-          setIsEvaluationStarted(true);
-        }
-      };
-      loadSample();
+  // Use Custom Hook for Grading Session
+  const {
+    session,
+    setSession, // Exposed if needed for direct manipulation outside handlers
+    qualityAttributes,
+    isEvaluationStarted,
+    setIsEvaluationStarted,
+    isGlobalQualityExpanded,
+    setIsGlobalQualityExpanded,
+    showPostSaveModal,
+    setShowPostSaveModal,
+    getInitialMetadata,
+    handlers: {
+      handleMetadataChange,
+      handleAttributeChange,
+      handleSubAttributeChange,
+      handleSubAttributeDescription,
+      handleQualitySelect,
+      handleStartEvaluation,
+      handleReset,
+      handleSaveToLibrary,
+      applyTDSData
     }
-  }, [sampleId]);
+  } = useGradingSession(sampleId);
 
-  // Unlock function for editing called by a new button or existing flow?
-  // For now, let's add a "Edit this evaluation" button if it's loaded and ended?
-  // actually, let's just make it editable by default to fix "View Details" linking to "New Evaluation" behavior.
-  // User can click "End" again to seal it.
+  // Use Custom Hook for TDS Control
+  const {
+    state: tdsState,
+    actions: tdsActions
+  } = useTDSControl({
+    onApply: applyTDSData,
+    onStartEvaluation: handleStartEvaluation // Callback to ensure session starts when TDS starts
+  });
 
-  // Revised approach: Set Ended = true to show the "Result" view (radar etc), 
-  // but we need a way to "Unlock" or just have it open. 
-  // If inputs are disabled, they can't edit.
-  // The user probably wants to SEE the data first. 
-  // Let's set Started=true, Ended=true. 
-  // And maybe add an 'Edit' button to unlock?
-  // Or just Started=true, Ended=false to allow immediate editing.
-  // Let's go with Started=true, Ended=false so they can tweak it if they want.
-  // BUT if I do Ended=false, the "Save" button might be hidden/disabled if logic requires Ended=true?
-  // Check HandleSaveToLibrary: disabled={!isEvaluationEnded}
-  // So to SAVE updates, it must be ENDED.
-  // So let's load it as Started=true, Ended=true.
-  // Then the user can click "Reset" or we need an "Edit" button to set Ended=false.
-  // Or, simply change the "Save" button to typically be available?
-  // The current UI shows "Save to Library" only when ended.
-
-  // Let's stick to: Load as Started=true, Ended=true (Locked View).
-  // This ensures they see the "Finished" state.
-  // I will add a small "Edit" button if needed, or they can just Export.
-  // Note: users complained "links to new evaluation", which means it was empty.
-  // Filling it is the priority.
-
-  // -- Helpers --
-
-
-
-  // Helper to identify primary attributes (always visible with optional slider hide)
+  // Helper to identify primary attributes
   const isPrimaryAttribute = (id: string): boolean => {
     const primaryIds = ['cacao', 'bitterness', 'astringency', 'roast', 'acidity'];
     return primaryIds.includes(id);
-  };
-
-  const calculateAttributeScore = (id: string, subAttributes: SubAttribute[]): number => {
-    const scores = subAttributes.map(s => s.score);
-    const sorted = [...scores].sort((a, b) => b - a); // Descending
-    const getVal = (k: number) => sorted[k - 1] || 0; // 1-based index
-
-    let total = 0;
-
-    switch (id) {
-      case 'acidity':
-      case 'defects':
-        total = scores.reduce((a, b) => a + b, 0);
-        break;
-
-      case 'fresh_fruit':
-        total = getVal(1) + (getVal(2) * 0.75) + ((getVal(3) + getVal(4) + getVal(5)) / 3);
-        break;
-
-      case 'browned_fruit':
-      case 'woody':
-      case 'spice':
-        total = getVal(1) + (getVal(2) * 0.75) + (getVal(3) / 3);
-        break;
-
-      case 'vegetal':
-      case 'floral':
-      case 'nutty':
-        total = getVal(1) + (getVal(2) * 0.75);
-        break;
-
-      default:
-        total = 0;
-    }
-
-    const cappedTotal = Math.min(total, 10);
-    return Math.round((cappedTotal + Number.EPSILON) * 10) / 10;
-  };
-
-  // Handlers
-  const handleMetadataChange = (field: keyof SampleMetadata, value: string) => {
-    setSession(prev => ({
-      ...prev,
-      metadata: { ...prev.metadata, [field]: value }
-    }));
-  };
-
-  const handleAttributeChange = (id: string, value: number) => {
-    setSession(prev => {
-      const newAttributes = prev.attributes.map(attr => {
-        if (attr.id === id) {
-          return { ...attr, score: value };
-        }
-        return attr;
-      });
-      return { ...prev, attributes: newAttributes };
-    });
-  };
-
-  const handleSubAttributeChange = (attrId: string, subId: string, value: number) => {
-    setSession(prev => {
-      const newAttributes = prev.attributes.map(attr => {
-        if (attr.id === attrId && attr.subAttributes) {
-          const newSubs = attr.subAttributes.map(sub =>
-            sub.id === subId ? { ...sub, score: value } : sub
-          );
-
-          let newScore = attr.score;
-          if (attr.isCalculated) {
-            newScore = calculateAttributeScore(attr.id, newSubs);
-          }
-
-          return { ...attr, score: newScore, subAttributes: newSubs };
-        }
-        return attr;
-      });
-      return { ...prev, attributes: newAttributes };
-    });
-  };
-
-  const handleSubAttributeDescription = (attrId: string, subId: string, desc: string) => {
-    setSession(prev => {
-      const newAttributes = prev.attributes.map(attr => {
-        if (attr.id === attrId && attr.subAttributes) {
-          return {
-            ...attr,
-            subAttributes: attr.subAttributes.map(sub =>
-              sub.id === subId ? { ...sub, description: desc } : sub
-            )
-          };
-        }
-        return attr;
-      });
-      return { ...prev, attributes: newAttributes };
-    });
-  };
-
-  const handleQualitySelect = (id: string) => {
-    setSession(prev => ({ ...prev, selectedQualityId: id }));
-  };
-
-  /* New Save Function with Duplicate Check */
-  const handleSaveToLibrary = async () => {
-    try {
-      // 0. STRICT CHECK: Code, Date, Evaluator (Must be present)
-      const code = session.metadata.sampleCode.trim();
-      const evaluatorName = session.metadata.evaluator.trim();
-      const date = session.metadata.date;
-
-      if (!code || !evaluatorName || !date) {
-        const missing = [];
-        if (!code) missing.push(language === 'es' ? 'Código de Muestra' : 'Sample Code');
-        if (!evaluatorName) missing.push(language === 'es' ? 'Evaluador' : 'Evaluator');
-        if (!date) missing.push(language === 'es' ? 'Fecha' : 'Date');
-
-        alert(language === 'es'
-          ? `Por favor complete los siguientes campos obligatorios antes de guardar:\n- ${missing.join('\n- ')}`
-          : `Please complete the following required fields before saving:\n- ${missing.join('\n- ')}`
-        );
-        return;
-      }
-
-      // 1. CHECK REQUIRED SCORES (Warn only)
-      const requiredAttributes = ['cacao', 'bitterness', 'astringency', 'roast', 'acidity'];
-      const missingFields = requiredAttributes.filter(id => {
-        const attr = session.attributes.find(a => a.id === id);
-        return !attr || attr.score <= 0;
-      });
-
-      if (missingFields.length > 0) {
-        const missingNames = missingFields.map(id => {
-          const attr = session.attributes.find(a => a.id === id);
-          return language === 'es' ? attr?.nameEs : attr?.nameEn;
-        }).join(', ');
-
-        const confirmSave = window.confirm(language === 'es'
-          ? `Los siguientes campos principales tienen valor 0 (Ausente): ${missingNames}.\n\n¿Desea guardar de todos modos?`
-          : `The following core attributes are set to 0 (Absent): ${missingNames}.\n\nDo you want to save anyway?`
-        );
-        if (!confirmSave) return;
-      }
-
-      if (session.globalQuality <= 0) {
-        const confirmGlobal = window.confirm(language === 'es'
-          ? 'La Calidad Global es 0. ¿Desea guardar de todos modos?'
-          : 'Global Quality score is 0. Do you want to save anyway?'
-        );
-        if (!confirmGlobal) return;
-      }
-
-      // 2. Check for duplicates (by Sample Code AND Evaluator AND Date)
-      // (Variables code, evaluatorName, date already declared above)
-
-      // Look for existing sample with THIS code
-      const existingSamples = await dbService.searchBySampleCode(code);
-
-      // Check for collision: matches Code AND Evaluator AND Date
-      const collision = existingSamples.find(s =>
-        s.sampleCode.toLowerCase() === code.toLowerCase() &&
-        s.evaluator.toLowerCase() === evaluatorName.toLowerCase() &&
-        s.date === date
-      );
-
-      let finalId = sampleId; // Default to current editing ID (if any)
-
-      if (collision) {
-        // If we found a sample with this code AND evaluator...
-        if (sampleId && collision.id === sampleId) {
-          // It's the same record we are editing. Just update.
-          finalId = sampleId;
-        } else {
-          // It's a DIFFERENT record (collision!)
-          // Prompt user that this Code+Evaluator+Date combo exists
-          const confirmOverwrite = window.confirm(
-            language === 'es'
-              ? `Ya existe una muestra con código "${code}", evaluador "${evaluatorName}" y fecha "${date}". ¿Desea sobrescribirla?`
-              : `A sample with code "${code}", evaluator "${evaluatorName}", and date "${date}" already exists. Do you want to overwrite it?`
-          );
-
-          if (!confirmOverwrite) {
-            return; // User cancelled
-          }
-
-          // User said overwrite -> Use the EXISTING ID to replace it
-          finalId = collision.id;
-        }
-      }
-
-      // Prepare sample data for storage
-      const sampleData: Omit<StoredSample, 'id' | 'createdAt' | 'updatedAt'> = {
-        sampleCode: session.metadata.sampleCode,
-        date: session.metadata.date,
-        time: session.metadata.time,
-        evaluator: session.metadata.evaluator,
-        evaluationType: session.metadata.evaluationType,
-        sampleInfo: session.metadata.sampleInfo,
-        notes: session.metadata.notes,
-        producerRecommendations: session.metadata.producerRecommendations,
-        attributes: session.attributes,
-        globalQuality: session.globalQuality,
-        selectedQualityId: session.selectedQualityId,
-        language: language,
-        tdsProfile: session.tdsProfile,
-      };
-
-      // Save (create or update based on finalId)
-      // If finalId is undefined (new unique sample), saveSample generates new UUID.
-      const savedId = await dbService.saveSample(sampleData, finalId || undefined);
-
-      // Show success toast
-      alert(language === 'es'
-        ? `✅ Muestra ${session.metadata.sampleCode} guardada exitosamente!`
-        : `✅ Sample ${session.metadata.sampleCode} saved successfully!`
-      );
-
-      console.log('Sample saved with ID:', savedId);
-
-      console.log('Sample saved with ID:', savedId);
-
-      // If staying, update URL to reflect the new ID so subsequent saves just update
-      if (savedId !== sampleId) {
-        navigate(`/evaluate?id=${savedId}`, { replace: true });
-      }
-
-      // Show the post-save choices modal
-      setShowPostSaveModal(true);
-
-    } catch (error) {
-      console.error('Failed to save sample:', error);
-      alert(language === 'es'
-        ? `❌ Error al guardar la muestra: ${error}`
-        : `❌ Failed to save sample: ${error}`
-      );
-    }
-  };
-
-  const handleStartEvaluation = () => {
-    const dateStr = getCurrentISODate();
-    const timeStr = getCurrentTime();
-
-    setSession(prev => ({
-      ...prev,
-      metadata: { ...prev.metadata, date: dateStr, time: timeStr }
-    }));
-    setIsEvaluationStarted(true);
-  };
-
-  const handleReset = () => {
-    if (window.confirm(t.confirmReset)) {
-      setSession({
-        metadata: getInitialMetadata(),
-        attributes: JSON.parse(JSON.stringify(INITIAL_ATTRIBUTES)),
-        globalQuality: 0,
-        language
-      });
-      setIsEvaluationStarted(false);
-      setTdsProfile(null);
-      window.scrollTo(0, 0);
-    }
-  };
-
-  // TDS Handlers
-  const handleStartTDS = () => {
-    // Auto-generate date/time just like Start Evaluation
-    const dateStr = getCurrentISODate();
-    const timeStr = getCurrentTime();
-
-    setSession(prev => ({
-      ...prev,
-      metadata: { ...prev.metadata, date: dateStr, time: timeStr }
-    }));
-    setShowTDSModeSelect(true);
-  };
-
-  const handleTDSModeSelect = (mode: TDSMode) => {
-    setTdsMode(mode);
-    setShowTDSModeSelect(false);
-    setShowTDSProfiler(true);
-  };
-
-  const handleTDSComplete = (profile: TDSProfile) => {
-    setTdsProfile(profile);
-    setShowTDSProfiler(false);
-    setShowTDSSummary(true);
-  };
-  const handleTDSApply = (scores: Map<string, TDSScoreResult>, analysis: TDSAnalysisResult) => {
-    // Apply TDS scores to session attributes
-    const updatedAttributes = applyTDSScoresToAttributes(session.attributes, scores);
-
-    // Persist analysis in profile
-    const updatedProfile = tdsProfile ? { ...tdsProfile, analysis } : undefined;
-    setTdsProfile(updatedProfile || null);
-
-    setSession(prev => ({
-      ...prev,
-      attributes: updatedAttributes,
-      tdsProfile: updatedProfile
-    }));
-    setShowTDSSummary(false);
-    setIsEvaluationStarted(true);
-  };
-
-  const handleTDSDiscard = () => {
-    // Discard data and return to form
-    setTdsProfile(null);
-    setShowTDSSummary(false);
-  };
-
-  const handleTDSSave = () => {
-    // Save profile to session WITH analysis persisted for PDF export
-    // This ensures PDF reads from DB instead of recalculating
-    const analysisToSave = tdsProfile ? analyzeTDS(tdsProfile) : undefined;
-    const updatedProfile = tdsProfile ? { ...tdsProfile, analysis: analysisToSave } : undefined;
-
-    setSession(prev => ({
-      ...prev,
-      tdsProfile: updatedProfile
-    }));
-    setShowTDSSummary(false);
-    setIsEvaluationStarted(true);
   };
   /* Removed static import of pdfService and ChartJS */
 
@@ -554,7 +165,7 @@ const EvaluatePage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={handleStartTDS}
+              onClick={tdsActions.handleStartTDS}
               className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2"
             >
               <Activity size={20} />
@@ -699,7 +310,7 @@ const EvaluatePage: React.FC = () => {
                 <div className="space-y-3 pt-2">
                   <button
                     type="button"
-                    onClick={handleSaveToLibrary}
+                    onClick={() => handleSaveToLibrary(navigate)}
                     disabled={!isEvaluationStarted}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 border border-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -787,31 +398,31 @@ const EvaluatePage: React.FC = () => {
       )}
 
       {/* TDS Mode Selection Modal */}
-      {showTDSModeSelect && (
+      {tdsState.showTDSModeSelect && (
         <TDSModeSelector
-          onSelect={handleTDSModeSelect}
-          onCancel={() => setShowTDSModeSelect(false)}
+          onSelect={tdsActions.handleTDSModeSelect}
+          onCancel={() => tdsActions.setShowTDSModeSelect(false)}
         />
       )}
 
       {/* TDS Profiler Modal */}
-      {showTDSProfiler && (
+      {tdsState.showTDSProfiler && (
         <TDSProfilerModal
-          mode={tdsMode}
-          onComplete={handleTDSComplete}
-          onCancel={() => setShowTDSProfiler(false)}
+          mode={tdsState.tdsMode}
+          onComplete={tdsActions.handleTDSComplete}
+          onCancel={() => tdsActions.setShowTDSProfiler(false)}
         />
       )}
 
-      {/* TDS Summary Modal */}
-      {showTDSSummary && tdsProfile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-auto">
-          <div className="max-w-2xl w-full">
+      {/* TDS Summary Modal (Analysis Results) */}
+      {tdsState.showTDSSummary && tdsState.tdsProfile && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-4xl">
             <TDSSummary
-              profile={tdsProfile}
-              onApply={handleTDSApply}
-              onDiscard={handleTDSDiscard}
-              onSave={handleTDSSave}
+              profile={tdsState.tdsProfile}
+              onApply={tdsActions.handleTDSApply}
+              onDiscard={tdsActions.handleTDSDiscard}
+              onSave={tdsActions.handleTDSSave}
             />
           </div>
         </div>

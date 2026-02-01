@@ -9,6 +9,15 @@
  */
 
 import { TDSEvent, TDSProfile, TDSMode, FlavorAttribute, TDSScoreResult, TDSAnalysisResult } from '../types';
+import {
+    TDS_ZONES,
+    SIGNIFICANCE_LEVEL,
+    MIN_DURATION_FOR_PRESENCE,
+    FINISH_SIGNIFICANT_DURATION,
+    FINISH_DOMINANT_DURATION,
+    AROMA_INTENSITY_THRESHOLDS,
+    AFTERTASTE_INTENSITY_THRESHOLDS
+} from '../config/sensoryConstants';
 
 // ============================================================================
 // CONFIGURATION: Parent-Child Aggregation Groups
@@ -99,11 +108,11 @@ const mapDurationToScore = (
     if (category === 'defect') {
         if (durationPercent === 0) return 0;
         if (durationPercent <= 3.0) return 1;
-        if (durationPercent <= 6.6) return 2;
+        if (durationPercent <= SIGNIFICANCE_LEVEL) return 2;
 
         // > 6.7%: "Significant (>3)". We extrapolate for high intensity.
         // 6.7 - 15% -> 3 - 5
-        if (durationPercent <= 15) return Math.round(mapRange(durationPercent, 6.7, 15, 3, 5));
+        if (durationPercent <= 15) return Math.round(mapRange(durationPercent, SIGNIFICANCE_LEVEL, 15, 3, 5));
         // 16 - 30% -> 6 - 8
         if (durationPercent <= 30) return Math.round(mapRange(durationPercent, 16, 30, 6, 8));
         // > 30% -> 9 - 10
@@ -143,9 +152,10 @@ const mapDurationToScore = (
     if (category === 'complementary') {
         if (durationPercent < 1.5) return 0;
         if (durationPercent <= 4.0) return 1;
-        if (durationPercent <= 6.6) return 2;
+        if (durationPercent <= 4.0) return 1;
+        if (durationPercent <= SIGNIFICANCE_LEVEL) return 2;
 
-        if (durationPercent <= 15) return Math.round(mapRange(durationPercent, 6.7, 15, 3, 4));
+        if (durationPercent <= 15) return Math.round(mapRange(durationPercent, SIGNIFICANCE_LEVEL, 15, 3, 4));
         if (durationPercent <= 30) return Math.round(mapRange(durationPercent, 16, 30, 5, 7));
 
         // > 30%: 8 - 10
@@ -166,10 +176,10 @@ const mapDurationToScore = (
     if (durationPercent < 2.0) return 0;
 
     // 2.0% - 6.6% -> 1
-    if (durationPercent <= 6.6) return 1;
+    if (durationPercent <= SIGNIFICANCE_LEVEL) return 1;
 
     // 6.7% - 20% -> 2 - 3
-    if (durationPercent <= 20) return Math.round(mapRange(durationPercent, 6.7, 20, 2, 3));
+    if (durationPercent <= 20) return Math.round(mapRange(durationPercent, SIGNIFICANCE_LEVEL, 20, 2, 3));
 
     // 21% - 40% -> 4 - 6
     if (durationPercent <= 40) return Math.round(mapRange(durationPercent, 21, 40, 4, 6));
@@ -190,9 +200,9 @@ const mapDurationToScore = (
  * Zone 3 (Finish):  > 1.0     → Aftertaste
  */
 const ZONES = {
-    attack: { start: 0, end: 0.2 },
-    body: { start: 0.2, end: 1.0 },
-    finish: { start: 1.0, end: Infinity },
+    attack: TDS_ZONES.ATTACK,
+    body: TDS_ZONES.BODY,
+    finish: TDS_ZONES.FINISH,
 };
 
 // ============================================================================
@@ -299,8 +309,8 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
     const zones = analyzeByZone(adjustedEvents, swallowTime);
 
     // Calculate zone durations
-    const attackDuration = swallowTime * 0.2;
-    const bodyDuration = swallowTime * 0.8;
+    const attackDuration = swallowTime * TDS_ZONES.ATTACK.end;
+    const bodyDuration = swallowTime * (TDS_ZONES.BODY.end - TDS_ZONES.BODY.start);
     // Post-swallow duration. 
     // IF fallback used: totalDuration == swallowTime => finishDuration = 0. Correct.
     const finishDuration = Math.max(0, totalDuration - swallowTime);
@@ -338,7 +348,7 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
         // Calculate Finish Dominance % (Relative to Finish Phase Duration if > 5s, else 0)
         // Let's use absolute seconds for stability.
 
-        if (finishDuration > 5 && finishTime > 0) { // Only boost if finish phase was meaningful
+        if (finishDuration > FINISH_SIGNIFICANT_DURATION && finishTime > 0) { // Only boost if finish phase was meaningful
 
             // Criteria 1: Significant Presence (> 5 seconds) -> Small Boost (+1)
             // Criteria 2: Major Dominance (> 10 seconds) -> Large Boost (+2)
@@ -347,8 +357,8 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
             let accumulatedBoost = 0;
             const finishPercent = (finishTime / finishDuration) * 100;
 
-            if (finishTime > 10) accumulatedBoost += 2;
-            else if (finishTime > 5) accumulatedBoost += 1;
+            if (finishTime > FINISH_DOMINANT_DURATION) accumulatedBoost += 2;
+            else if (finishTime > FINISH_SIGNIFICANT_DURATION) accumulatedBoost += 1;
 
             // Additional boost for dominating the aftertaste context
             if (finishPercent > 50) accumulatedBoost += 1;
@@ -374,7 +384,7 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
             score,
             durationPercent: Math.round(finalDurationPercent * 10) / 10,
             totalDuration: Math.round(totalRaw * 10) / 10,
-            isPresent: totalRaw > 0.05, // Lower threshold to catch quick clicks
+            isPresent: totalRaw > MIN_DURATION_FOR_PRESENCE, // Lower threshold to catch quick clicks
             isFlagged: isCore && finalDurationPercent === 0,
             category,
             originalScore: undefined,
@@ -423,13 +433,13 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
 
                     // Child Boost (Aftertaste)
                     const cFinish = zones.finish.get(childId) || 0;
-                    if (finishDuration > 5 && cFinish > 0) {
+                    if (finishDuration > FINISH_SIGNIFICANT_DURATION && cFinish > 0) {
                         childFinishTotal += cFinish; // Accumulate finish duration
 
                         // "If a child attribute lingers... it boosts the parent."
                         let cb = 0;
-                        if (cFinish > 10) cb += 2;
-                        else if (cFinish > 5) cb += 1;
+                        if (cFinish > FINISH_DOMINANT_DURATION) cb += 2;
+                        else if (cFinish > FINISH_SIGNIFICANT_DURATION) cb += 1;
                         if ((cFinish / finishDuration) > 0.5) cb += 1; // Dominant finish
 
                         if (cb > 0) childBoost += cb;
@@ -458,7 +468,7 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
 
             // Boost Logic ... (Existing)
             const selfFinish = zones.finish.get(coreAttr) || 0;
-            if (finishDuration > 5 && selfFinish > 0) {
+            if (finishDuration > FINISH_SIGNIFICANT_DURATION && selfFinish > 0) {
                 // ... logic
             }
             // ... (rest of boost logic)
@@ -520,11 +530,11 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
 
     // Aroma intensity
     let aromaIntensity = 3;
-    if (maxAttackPercent > 50) aromaIntensity = 8;
-    else if (maxAttackPercent > 30) aromaIntensity = 7;
-    else if (maxAttackPercent > 20) aromaIntensity = 6;
-    else if (maxAttackPercent > 10) aromaIntensity = 5;
-    else if (maxAttackPercent > 5) aromaIntensity = 4;
+    if (maxAttackPercent > AROMA_INTENSITY_THRESHOLDS.DOMINANT) aromaIntensity = 8;
+    else if (maxAttackPercent > AROMA_INTENSITY_THRESHOLDS.VERY_HIGH) aromaIntensity = 7;
+    else if (maxAttackPercent > AROMA_INTENSITY_THRESHOLDS.HIGH) aromaIntensity = 6;
+    else if (maxAttackPercent > AROMA_INTENSITY_THRESHOLDS.MEDIUM) aromaIntensity = 5;
+    else if (maxAttackPercent > AROMA_INTENSITY_THRESHOLDS.LOW) aromaIntensity = 4;
     else if (maxAttackPercent === 0) aromaIntensity = 2;
 
     // -------------------------------------------------------------------------
@@ -543,11 +553,11 @@ export const analyzeTDS = (profile: TDSProfile): TDSAnalysisResult => {
 
     // Aftertaste intensity
     let aftertasteIntensity = 3;
-    if (maxFinishPercent > 60) aftertasteIntensity = 8;
-    else if (maxFinishPercent > 40) aftertasteIntensity = 7;
-    else if (maxFinishPercent > 25) aftertasteIntensity = 6;
-    else if (maxFinishPercent > 15) aftertasteIntensity = 5;
-    else if (maxFinishPercent > 5) aftertasteIntensity = 4;
+    if (maxFinishPercent > AFTERTASTE_INTENSITY_THRESHOLDS.DOMINANT) aftertasteIntensity = 8;
+    else if (maxFinishPercent > AFTERTASTE_INTENSITY_THRESHOLDS.VERY_HIGH) aftertasteIntensity = 7;
+    else if (maxFinishPercent > AFTERTASTE_INTENSITY_THRESHOLDS.HIGH) aftertasteIntensity = 6;
+    else if (maxFinishPercent > AFTERTASTE_INTENSITY_THRESHOLDS.MEDIUM) aftertasteIntensity = 5;
+    else if (maxFinishPercent > AFTERTASTE_INTENSITY_THRESHOLDS.LOW) aftertasteIntensity = 4;
 
     // Aftertaste quality - positive if pleasant flavors linger
     const positiveAttrs = ['cacao', 'fresh_fruit', 'browned_fruit', 'floral', 'caramel', 'sweetness', 'nutty'];

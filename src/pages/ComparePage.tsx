@@ -59,6 +59,8 @@ const ComparePage: React.FC = () => {
 
     // 2. Perform Analysis (Async for Clustering)
     useEffect(() => {
+        let timerId: NodeJS.Timeout;
+
         const runAnalysis = async () => {
             if (sessions.length < 2) {
                 setDistanceData(null);
@@ -67,25 +69,31 @@ const ComparePage: React.FC = () => {
             }
 
             setAnalyzing(true);
-            try {
-                // A. Distance Matrix (Sync)
-                // analysisService now accepts StoredSample[]
-                const distResult = calculateDistanceMatrix(sessions);
-                setDistanceData(distResult);
 
-                // B. Clustering (Async)
-                if (sessions.length > 2) {
-                    const clusterResult = await performClustering(sessions, distResult);
-                    setClusters(clusterResult);
+            // Optimization: Wrap in setTimeout to allow the UI to render the loading state (spinner)
+            // before blocking the main thread with heavy matrix calculations.
+            timerId = setTimeout(async () => {
+                try {
+                    // A. Distance Matrix (Sync - may be heavy for >100 samples)
+                    const distResult = calculateDistanceMatrix(sessions);
+                    setDistanceData(distResult);
+
+                    // B. Clustering (Async wrapper over sync logic usually)
+                    if (sessions.length > 2) {
+                        const clusterResult = await performClustering(sessions, distResult);
+                        setClusters(clusterResult);
+                    }
+                } catch (err) {
+                    console.error("Analysis failed", err);
+                } finally {
+                    setAnalyzing(false);
                 }
-            } catch (err) {
-                console.error("Analysis failed", err);
-            } finally {
-                setAnalyzing(false);
-            }
+            }, 50); // Small delay to ensure paint
         };
 
         runAnalysis();
+
+        return () => clearTimeout(timerId);
     }, [sessions]);
 
     // Handlers

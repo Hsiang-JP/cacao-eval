@@ -488,12 +488,12 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
 
           if (needsRecalc) {
             console.log(`[PDF] Recalculating analysis for sample ${i + 1} due to missing fields or legacy format.`);
-            analysis = analyzeTDS(
-              session.tdsProfile.events,
-              session.tdsProfile.swallowTime,
-              session.tdsProfile.totalDuration,
-              session.tdsProfile.mode
-            );
+            analysis = analyzeTDS({
+              mode: session.tdsProfile.mode,
+              events: session.tdsProfile.events,
+              swallowTime: session.tdsProfile.swallowTime,
+              totalDuration: session.tdsProfile.totalDuration
+            });
           }
         }
         // 4. Aroma Insights (if available)
@@ -581,28 +581,29 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
           }
         }
       }
-
-      // Sample counter footer
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(`${t("Sample", "Muestra")} ${i + 1} / ${sessions.length}`, 14, 290, { align: 'left' });
     }
 
-    // console.log('DEBUG generatePdf customFilename:', customFilename);
-    let filename = customFilename;
-    if (!filename) {
-      const dateStr = getDateStringForFilename();
-      filename = sessions.length === 1
-        ? `CoEx_${sessions[0].metadata.sampleCode || 'Report'}.pdf`
-        : `CoEx_Bulk_Report_${dateStr}.pdf`;
-    }
+    // Sample counter footer
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`${t("Sample", "Muestra")} ${i + 1} / ${sessions.length}`, 14, 290, { align: 'left' });
+  }
 
-    if (!filename.toLowerCase().endsWith('.pdf')) {
-      filename += '.pdf';
-    }
+  // console.log('DEBUG generatePdf customFilename:', customFilename);
+  let filename = customFilename;
+  if (!filename) {
+    const dateStr = getDateStringForFilename();
+    filename = sessions.length === 1
+      ? `CoEx_${sessions[0].metadata.sampleCode || 'Report'}.pdf`
+      : `CoEx_Bulk_Report_${dateStr}.pdf`;
+  }
 
-    doc.save(filename);
-  };
+  if (!filename.toLowerCase().endsWith('.pdf')) {
+    filename += '.pdf';
+  }
+
+  doc.save(filename);
+};
 
 
 

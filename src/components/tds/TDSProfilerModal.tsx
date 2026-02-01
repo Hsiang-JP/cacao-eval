@@ -11,6 +11,8 @@ import { TDSMode, TDSEvent, TDSProfile } from '../../types';
 // import { detectInputMethod, InputMethod } from '../../utils/inputDetection';
 import { getAttributeColor } from '../../utils/colors';
 import { useLanguage } from '../../context/LanguageContext';
+import TDSTimer from './TDSTimer';
+import TDSButton from './TDSButton';
 
 // Core attributes for Normal mode (CoEx standard 5)
 const CORE_ATTRIBUTES = ['cacao', 'acidity', 'bitterness', 'astringency', 'roast'];
@@ -39,7 +41,7 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
 }) => {
     const { language } = useLanguage();
     const [state, setState] = useState<TDSState>('idle');
-    const [elapsedTime, setElapsedTime] = useState(0);
+    // const [elapsedTime, setElapsedTime] = useState(0); // REMOVED: Managed by TDSTimer
     const [swallowTime, setSwallowTime] = useState<number | null>(null);
     const [currentAttr, setCurrentAttr] = useState<string | null>(null); // Single active attribute
     const [events, setEvents] = useState<TDSEvent[]>([]);
@@ -92,24 +94,7 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
         };
     }, []);
 
-    // Timer using requestAnimationFrame
-    useEffect(() => {
-        if (state !== 'tasting' && state !== 'swallowed') return;
-
-        const tick = () => {
-            // Use performance.now() consistently with startTimeRef
-            const elapsed = (performance.now() - startTimeRef.current) / 1000;
-            setElapsedTime(elapsed);
-
-            animationFrameRef.current = requestAnimationFrame(tick);
-        };
-
-        animationFrameRef.current = requestAnimationFrame(tick);
-
-        return () => {
-            cancelAnimationFrame(animationFrameRef.current);
-        };
-    }, [state]);
+    // Timer loop REMOVED - Handled by TDSTimer component to prevent re-renders
 
     // Stop the current attribute and record the event
     const stopCurrentAttr = useCallback(() => {
@@ -159,11 +144,25 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
         setCurrentAttr(attrId);
     }, [state, currentAttr, swallowTime, stopCurrentAttr]);
 
+    // Adapter for TDSButton (which expects onStart/onStop)
+    // Since we use single-selection, onStart triggers selection, onStop is ignored/not needed for latch mode
+    // But for "Touch" mode (press-hold), onStart=Press, onStop=Release
+
+    const handleButtonStart = useCallback((attrId: string) => {
+        handleAttrSelect(attrId);
+    }, [handleAttrSelect]);
+
+    const handleButtonStop = useCallback((attrId: string) => {
+        // Since press-and-hold is no longer used, and we forced inputMethod='mouse',
+        // this callback is effectivey unused or no-op. 
+        // We keep it empty to satisfy the TDSButton interface if needed.
+    }, []);
+
     // Start tasting
     const handleStart = () => {
         startTimeRef.current = performance.now();
         setState('tasting');
-        setElapsedTime(0);
+        // setElapsedTime(0); // REMOVED
         setEvents([]);
         setCurrentAttr(null);
         currentAttrStartRef.current = null;
@@ -241,9 +240,10 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
 
             {/* Timer Display */}
             <div className="flex-none py-6 text-center">
-                <div className="text-6xl font-mono font-bold text-white tracking-wider">
-                    {formatTime(elapsedTime)}
-                </div>
+                <TDSTimer
+                    startTime={startTimeRef.current}
+                    isRunning={state === 'tasting' || state === 'swallowed'}
+                />
                 {swallowTime !== null && (
                     <div className="text-amber-400 text-sm mt-2">
                         {language === 'es' ? 'Tragado a' : 'Swallowed at'} {formatTime(swallowTime)}
@@ -310,43 +310,17 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                             const color = getAttributeColor(attrId);
 
                             return (
-                                <button
+                                <TDSButton
                                     key={attrId}
-                                    type="button"
-                                    className={`
-                    relative flex items-center justify-center
-                    px-4 py-3 rounded-xl font-bold text-sm uppercase tracking-wide
-                    transition-all duration-150 select-none
-                    ${isActive
-                                            ? 'ring-4 ring-offset-2 ring-white/50 scale-95 shadow-lg'
-                                            : 'hover:scale-105 shadow-md'}
-                    ${state === 'finished' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                  `}
-                                    style={{
-                                        backgroundColor: isActive ? color : `${color}80`,
-                                        color: '#fff',
-                                        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                                        // Lock button in place - no drag/scroll
-                                        touchAction: 'manipulation',
-                                        WebkitTouchCallout: 'none',
-                                        WebkitUserSelect: 'none',
-                                        userSelect: 'none',
-                                    }}
-                                    onClick={() => handleAttrSelect(attrId)}
+                                    attrId={attrId}
+                                    label={ATTRIBUTE_LABELS[attrId]?.[language] || attrId}
+                                    color={color}
+                                    inputMethod={inputMethod} // Currently forced to 'mouse' in component state, but component supports both
+                                    isActive={isActive}
+                                    onStart={handleButtonStart}
+                                    onStop={handleButtonStop}
                                     disabled={state === 'finished'}
-                                    aria-pressed={isActive}
-                                >
-                                    {/* Active indicator pulse */}
-                                    {isActive && (
-                                        <span
-                                            className="absolute inset-0 rounded-xl animate-pulse"
-                                            style={{ backgroundColor: color, opacity: 0.3 }}
-                                        />
-                                    )}
-                                    <span className="relative z-10">
-                                        {ATTRIBUTE_LABELS[attrId]?.[language] || attrId}
-                                    </span>
-                                </button>
+                                />
                             );
                         })}
                     </div>
