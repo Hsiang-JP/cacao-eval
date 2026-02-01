@@ -3,8 +3,8 @@ import { FlavorAttribute, QualityAttribute } from './types';
 
 export const TRANSLATIONS = {
   en: {
-    title: "Cacao of Excellence",
-    subtitle: "Digital Evaluation Form",
+    title: "Cacao Evaluation",
+    subtitle: "Data-driven approach",
     guidelines: "Guidelines",
     history: "History",
     sampleInfoHeader: "Sample Info",
@@ -55,8 +55,8 @@ export const TRANSLATIONS = {
     viewAndEdit: 'View & Edit'
   },
   es: {
-    title: "Cacao de Excelencia",
-    subtitle: "Formulario de evaluación digital",
+    title: "Evaluación del Cacao",
+    subtitle: "Enfoque basado en datos",
     guidelines: "Instrucciones",
     history: "Historial",
     sampleInfoHeader: "Información de muestra",
