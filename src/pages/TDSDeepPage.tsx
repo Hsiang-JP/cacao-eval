@@ -143,31 +143,8 @@ const TDSDeepPage: React.FC = () => {
                             {/* List of Samples (Card + Timeline) */}
                             <div className="space-y-6">
                                 {samples.map(sample => (
-                                    <div key={sample.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                        {/* Left: Sample Card Info */}
-                                        <div className="lg:col-span-1">
-                                            <SampleLibraryCard
-                                                sample={sample}
-                                                selectable={false}
-                                                compact
-                                            />
-                                        </div>
-
-                                        {/* Right: Timeline */}
-                                        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-                                            <h3 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">
-                                                {language === 'es' ? 'Línea de Tiempo' : 'Timeline'}
-                                            </h3>
-                                            <div className="w-full">
-                                                {sample.tdsProfile ? (
-                                                    <TDSTimeline profile={sample.tdsProfile} />
-                                                ) : (
-                                                    <div className="h-32 flex items-center justify-center text-gray-400 italic bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                                                        {language === 'es' ? 'Sin datos TDS registrados' : 'No TDS data recorded'}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                    <div key={sample.id}>
+                                        <TDSDeepSampleRow sample={sample} />
                                     </div>
                                 ))}
 
@@ -254,35 +231,8 @@ const SingleViewHandler: React.FC<{ samples: StoredSample[], activeAttributeIds:
                 </div>
             )}
 
-            {/* 2. Top Row: Card + Timeline */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left: Card Data */}
-                <div className="lg:col-span-1">
-                    <SampleLibraryCard
-                        sample={activeSample}
-                        selectable={false}
-                        compact
-                    />
-                </div>
-
-                {/* Right: Timeline */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-                    <h3 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">
-                        {language === 'es' ? 'Línea de Tiempo (Eventos)' : 'Timeline (Raw Events)'}
-                    </h3>
-                    <div className="flex-1 flex flex-col justify-center">
-                        {activeSample.tdsProfile ? (
-                            <TDSTimeline
-                                profile={activeSample.tdsProfile}
-                            />
-                        ) : (
-                            <div className="text-center text-gray-400 italic py-8 border border-dashed border-gray-200 rounded-lg">
-                                {language === 'es' ? 'Sin datos de línea de tiempo' : 'No timeline data'}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+            {/* 2. Top Row: Card + Timeline -> Reused Component */}
+            <TDSDeepSampleRow sample={activeSample} />
 
             {/* 3. Bottom Row: Stream Graph */}
             <div className="animate-fade-in-up delay-100">
@@ -296,6 +246,42 @@ const SingleViewHandler: React.FC<{ samples: StoredSample[], activeAttributeIds:
                         No TDS Profile Data
                     </div>
                 )}
+            </div>
+        </div>
+    );
+};
+
+// Reusable Component for Sample Row (Card + Timeline) to ensure consistency
+const TDSDeepSampleRow: React.FC<{ sample: StoredSample }> = ({ sample }) => {
+    const { language } = useLanguage();
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left: Sample Card Info */}
+            <div className="lg:col-span-1">
+                <SampleLibraryCard
+                    sample={sample}
+                    selectable={false}
+                    compact
+                />
+            </div>
+
+            {/* Right: Timeline */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+                <h3 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">
+                    {language === 'es' ? 'Línea de Tiempo (Eventos)' : 'Timeline (Raw Events)'}
+                </h3>
+                <div className="flex-1 flex flex-col justify-center">
+                    {sample.tdsProfile ? (
+                        <TDSTimeline
+                            profile={sample.tdsProfile}
+                        />
+                    ) : (
+                        <div className="h-32 flex items-center justify-center text-gray-400 italic bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                            {language === 'es' ? 'Sin datos TDS registrados' : 'No TDS data recorded'}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

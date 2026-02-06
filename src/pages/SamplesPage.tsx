@@ -10,6 +10,7 @@ import Papa from 'papaparse';
 import { CSV_HEADERS_EN, CSV_HEADERS_ES } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
 import Footer from '../components/Footer';
+import { matchesSearch } from '../utils/searchLogic';
 
 const SamplesPage: React.FC = () => {
     const { language, t } = useLanguage();
@@ -64,13 +65,7 @@ const SamplesPage: React.FC = () => {
     };
 
     const filteredSamples = samples.filter(s => {
-        const query = searchTerm.toLowerCase().trim();
-        // Special "keyword" search for TDS
-        if (query === 'tds') {
-            return s.tdsProfile && s.tdsProfile.events && s.tdsProfile.events.length > 0;
-        }
-        return s.sampleCode.toLowerCase().includes(query) ||
-            s.evaluator.toLowerCase().includes(query);
+        return matchesSearch(s, searchTerm);
     });
 
     const hasTdsData = selectedIds.size > 0 && Array.from(selectedIds).every(id => {
@@ -265,7 +260,7 @@ const SamplesPage: React.FC = () => {
             <input
                 type="file"
                 id="csv-import-input"
-                accept=".csv"
+                accept=".csv, text/csv, application/vnd.ms-excel"
                 className="hidden"
                 onChange={handleFileChange}
             />
@@ -277,15 +272,28 @@ const SamplesPage: React.FC = () => {
 
                     {/* Responsive Layout: Search stacks on mobile, side-by-side on desktop */}
                     <div className="flex flex-col lg:flex-row justify-between gap-4">
-                        <div className="relative w-full lg:w-96 flex-shrink-0">
+                        <div className="relative w-full lg:w-96 flex-shrink-0 z-20">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 type="text"
                                 placeholder={t.searchSamples || "Search samples..."}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cacao-500 focus:bg-white transition-all"
+                                className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cacao-500 focus:bg-white transition-all"
                             />
+                            {/* Help Tooltip */}
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 group">
+                                <span className="text-gray-400 cursor-help text-xs font-bold border border-gray-300 rounded-full w-5 h-5 flex items-center justify-center">?</span>
+                                <div className="absolute right-0 top-8 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                    <p className="font-bold mb-1">Advanced Filters:</p>
+                                    <ul className="space-y-1 text-gray-300">
+                                        <li><code>score {'>'} 8</code></li>
+                                        <li><code>acidity {'>='} 5</code></li>
+                                        <li><code>date : 2024</code></li>
+                                        <li><code>cocoa OR score {'>'} 9</code></li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Actions Container */}
@@ -381,34 +389,36 @@ const SamplesPage: React.FC = () => {
                 </div>
 
                 {/* Samples List */}
-                {loading ? (
-                    <div className="text-center py-20 text-gray-500">Loading samples...</div>
-                ) : filteredSamples.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-                        <p className="text-gray-500 mb-4">{t.noSamples || "No samples found"}</p>
-                        <button
-                            onClick={() => navigate('/evaluate')}
-                            className="text-cacao-600 font-bold hover:underline"
-                        >
-                            Start your first evaluation
-                        </button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-                        {filteredSamples.map(sample => (
-                            <SampleLibraryCard
-                                key={sample.id}
-                                sample={sample}
-                                isSelected={selectedIds.has(sample.id)}
-                                onToggleSelect={toggleSelection}
-                                onDelete={handleDelete}
-                            />
-                        ))}
-                    </div>
-                )}
-            </main>
+                {
+                    loading ? (
+                        <div className="text-center py-20 text-gray-500">Loading samples...</div>
+                    ) : filteredSamples.length === 0 ? (
+                        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+                            <p className="text-gray-500 mb-4">{t.noSamples || "No samples found"}</p>
+                            <button
+                                onClick={() => navigate('/evaluate')}
+                                className="text-cacao-600 font-bold hover:underline"
+                            >
+                                Start your first evaluation
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+                            {filteredSamples.map(sample => (
+                                <SampleLibraryCard
+                                    key={sample.id}
+                                    sample={sample}
+                                    isSelected={selectedIds.has(sample.id)}
+                                    onToggleSelect={toggleSelection}
+                                    onDelete={handleDelete}
+                                />
+                            ))}
+                        </div>
+                    )
+                }
+            </main >
             <Footer />
-        </div>
+        </div >
     );
 };
 

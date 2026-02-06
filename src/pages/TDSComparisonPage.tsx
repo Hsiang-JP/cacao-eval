@@ -129,7 +129,7 @@ const TDSComparisonPage: React.FC = () => {
                         <label className="flex items-center gap-2 px-4 py-2 bg-stone-200 hover:bg-stone-300 rounded-lg cursor-pointer transition-colors text-stone-700 font-medium text-sm">
                             <Upload size={18} />
                             Upload CSV
-                            <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
+                            <input type="file" accept=".csv, text/csv, application/vnd.ms-excel" className="hidden" onChange={handleFileUpload} />
                         </label>
                         <button
                             onClick={() => window.location.reload()}

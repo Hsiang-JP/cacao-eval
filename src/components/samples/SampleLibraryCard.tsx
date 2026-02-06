@@ -70,23 +70,18 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
                                     ? (language === 'es' ? 'Masa de Cacao' : 'Cacao Mass')
                                     : (language === 'es' ? 'Chocolate' : 'Chocolate')}
                             </span>
+                            {/* TDS Badge Removed from Header */}
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-500 mt-1 flex-wrap">
                             <div className="flex items-center gap-1">
                                 <Calendar size={12} className="flex-shrink-0" />
-                                <span>{formatDate(sample.date)}</span>
+                                <span className="truncate">{formatDate(sample.date)}</span>
                             </div>
                             <span className="hidden sm:inline">•</span>
                             <div className="flex items-center gap-1">
                                 <User size={12} className="flex-shrink-0" />
                                 <span className="truncate max-w-[80px] sm:max-w-none">{sample.evaluator}</span>
                             </div>
-                            {sample.tdsProfile && (
-                                <div className="flex items-center gap-1 text-amber-700 font-bold bg-amber-100 px-1.5 py-0.5 rounded-full" aria-label="TDS Profile Included">
-                                    <Activity size={10} />
-                                    <span className="text-[10px]">TDS</span>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -125,16 +120,25 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
             )}
 
             {/* Toggle Button */}
-            {!hideDetails && (
-                <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="w-full text-left py-2 text-cacao-700 font-bold text-lg hover:text-cacao-900 flex items-center justify-between group mt-auto"
-                >
-                    <span>{t.viewDetails || "View Details"}</span>
-                    {/* Optional Chevron if desired, implies action */}
-                    {/* <ChevronDown size={20} className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} /> */}
-                </button>
-            )}
+            {/* Footer Action Bar */}
+            <div className="mt-auto flex items-center justify-between pt-2">
+                {!hideDetails && (
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="text-left py-1 text-cacao-700 font-bold text-lg hover:text-cacao-900 group"
+                    >
+                        <span>{t.viewDetails || "View Details"}</span>
+                    </button>
+                )}
+
+                {/* TDS Badge - Moved here, larger and right-aligned */}
+                {sample.tdsProfile && (
+                    <div className="flex items-center gap-1.5 text-amber-700 font-bold bg-amber-100 px-2.5 py-1 rounded-full shadow-sm" aria-label="TDS Profile Included">
+                        <Activity size={14} />
+                        <span className="text-xs tracking-wide">TDS</span>
+                    </div>
+                )}
+            </div>
 
             {/* Expanded Details: Attribute Grid */}
             {isExpanded && (

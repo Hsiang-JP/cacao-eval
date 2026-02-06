@@ -82,7 +82,6 @@ const TDSAggregationChart: React.FC<TDSAggregationChartProps> = ({ data, attribu
                             type="number"
                             domain={[0, 130]}
                             ticks={[0, 25, 50, 75, 100, 130]}
-                            unit="%"
                             label={{
                                 value: language === 'es' ? '% Duración Normalizada' : '% Normalized Duration',
                                 position: 'insideBottom',
