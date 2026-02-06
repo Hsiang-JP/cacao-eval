@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hsiang-jp.github.io/cacao-eval/sitemap.xml

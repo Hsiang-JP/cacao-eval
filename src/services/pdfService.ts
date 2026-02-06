@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { GradingSession, FlavorAttribute } from '../types';
 import { ATTRIBUTE_LABELS } from '../data/attributes';
 import { Chart, registerables } from 'chart.js';
-import { INITIAL_QUALITY_ATTRIBUTES } from '../constants';
+import { INITIAL_QUALITY_ATTRIBUTES, INITIAL_ATTRIBUTES } from '../constants';
 import { getAttributeColor } from '../utils/colors';
 import { analyzeTDS } from '../utils/tdsCalculator';
 import { formatDateForDisplay, getDateStringForFilename } from '../utils/dateUtils';
@@ -414,7 +414,15 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
 
         const sortedScores = scoresEntries
           .filter(([_, res]) => res.durationPercent > 0)
-          .sort((a, b) => b[1].score - a[1].score);
+          .sort((a, b) => {
+            // Sort by the order defined in INITIAL_ATTRIBUTES (Standard CoEx order)
+            const idxA = INITIAL_ATTRIBUTES.findIndex(attr => attr.id === a[0]);
+            const idxB = INITIAL_ATTRIBUTES.findIndex(attr => attr.id === b[0]);
+            // Put unknown attributes at the end
+            const safeIdxA = idxA === -1 ? 999 : idxA;
+            const safeIdxB = idxB === -1 ? 999 : idxB;
+            return safeIdxA - safeIdxB;
+          });
 
         const tableRows = sortedScores.map(([attrId, result]) => {
           const attr = session.attributes.find(a => a.id === attrId) ||
@@ -490,6 +498,7 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
             console.log(`[PDF] Recalculating analysis for sample ${i + 1} due to missing fields or legacy format.`);
             analysis = analyzeTDS({
               mode: session.tdsProfile.mode,
+              id: 'temp-recalc',
               events: session.tdsProfile.events,
               swallowTime: session.tdsProfile.swallowTime,
               totalDuration: session.tdsProfile.totalDuration

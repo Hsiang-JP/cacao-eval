@@ -16,19 +16,23 @@ const LoadingFallback = () => (
   </div>
 );
 
+import Layout from './components/Layout';
+
 const App: React.FC = () => {
   return (
     <LanguageProvider>
       <Router>
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
-            <Route path="/" element={<Navigate to="/evaluate" replace />} />
-            <Route path="/evaluate" element={<EvaluatePage />} />
-            <Route path="/samples" element={<SamplesPage />} />
-            <Route path="/compare" element={<ComparePage />} />
-            <Route path="/references" element={<ReferencesPage />} />
-            <Route path="/tds-test" element={<TDSComparisonPage />} />
-            <Route path="/tds-deep" element={<TDSDeepPage />} />
+            <Route element={<Layout />}>
+              <Route path="/" element={<Navigate to="/evaluate" replace />} />
+              <Route path="/evaluate" element={<EvaluatePage />} />
+              <Route path="/samples" element={<SamplesPage />} />
+              <Route path="/compare" element={<ComparePage />} />
+              <Route path="/references" element={<ReferencesPage />} />
+              <Route path="/tds-test" element={<TDSComparisonPage />} />
+              <Route path="/tds-deep" element={<TDSDeepPage />} />
+            </Route>
           </Routes>
         </Suspense>
       </Router>

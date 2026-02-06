@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dbService, StoredSample } from '../services/dbService';
 import { getDateStringForFilename } from '../utils/dateUtils';
-import Header from '../components/Header';
+
 import { TRANSLATIONS } from '../constants';
 import { Search, Trash2, Calendar, User, FileText, CheckSquare, Square, BarChart2, Upload, Download, Plus } from 'lucide-react';
 import SampleLibraryCard from '../components/samples/SampleLibraryCard';
 import Papa from 'papaparse';
 import { CSV_HEADERS_EN, CSV_HEADERS_ES } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
-import Footer from '../components/Footer';
+
 import { matchesSearch } from '../utils/searchLogic';
 import ValidationModal from '../components/ValidationModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -288,9 +288,7 @@ const SamplesPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-cacao-50 text-gray-800 font-sans">
-            <Header />
-
+        <>
             {/* Hidden File Input for CSV Import */}
             <input
                 type="file"
@@ -452,7 +450,7 @@ const SamplesPage: React.FC = () => {
                     )
                 }
             </main >
-            <Footer />
+
 
             <ValidationModal
                 isOpen={!!validationMsg}
@@ -478,7 +476,7 @@ const SamplesPage: React.FC = () => {
                 message={inputState?.message}
                 defaultValue={inputState?.defaultValue}
             />
-        </div >
+        </>
     );
 };
 

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Header from '../components/Header';
 import { ArrowLeft, FileDown, Layers, Activity } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import Footer from '../components/Footer';
+
 import { dbService, StoredSample } from '../services/dbService';
 
 import { ComparisonRadar } from '../components/compare/ComparisonRadar';
@@ -134,33 +133,25 @@ const ComparePage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex flex-col min-h-screen bg-cacao-50">
-                <Header />
-                <div className="flex-grow flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cacao-600"></div>
-                </div>
+            <div className="w-full flex-grow flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cacao-600"></div>
             </div>
         );
     }
 
     if (sessions.length === 0) {
         return (
-            <div className="flex flex-col min-h-screen bg-cacao-50">
-                <Header />
-                <main className="p-8 text-center flex-grow">
-                    <h2 className="text-xl text-gray-600">No samples selected.</h2>
-                    <button onClick={handleBack} className="mt-4 text-cacao-600 hover:underline">
-                        Go back to Library
-                    </button>
-                </main>
-                <Footer />
+            <div className="w-full p-8 text-center flex-grow">
+                <h2 className="text-xl text-gray-600">No samples selected.</h2>
+                <button onClick={handleBack} className="mt-4 text-cacao-600 hover:underline">
+                    Go back to Library
+                </button>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-cacao-50 text-gray-800 font-sans">
-            <Header />
+        <>
 
             <main className="w-full px-4 md:px-8 space-y-6 flex-grow py-6">
                 {/* Top Controls */}
@@ -296,14 +287,7 @@ const ComparePage: React.FC = () => {
                 </div>
 
             </main>
-            <Footer />
-
-            <ValidationModal
-                isOpen={!!validationError}
-                onClose={() => setValidationError(null)}
-                message={validationError || ''}
-            />
-        </div>
+        </>
     );
 };
 

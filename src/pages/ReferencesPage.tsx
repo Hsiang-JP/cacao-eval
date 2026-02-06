@@ -1,8 +1,8 @@
 import React from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+
+
 import { useLanguage } from '../context/LanguageContext';
-import { ExternalLink, FileText } from 'lucide-react';
+import { ExternalLink, FileText, User } from 'lucide-react';
 
 const ReferencesPage: React.FC = () => {
     const { language, t } = useLanguage();
@@ -11,6 +11,34 @@ const ReferencesPage: React.FC = () => {
         title: {
             en: "References & Citation",
             es: "Referencias y Citación"
+        },
+        authorTitle: {
+            en: "Author",
+            es: "Autor"
+        },
+        authorBio: {
+            en: "Hsiang, PhD in Cognitive Neuroscience. Expert in using data-driven approaches to answer complex questions.",
+            es: "Hsiang, PhD en Neurociencia Cognitiva. Experto en el uso de enfoques basados en datos para responder preguntas complejas."
+        },
+        backgroundTitle: {
+            en: "Background",
+            es: "Antecedentes"
+        },
+        backgroundText: {
+            en: "This application was developed as a side project during my intensive cacao tasting course in Peru. Entering the field with no prior cacao experience, I relied on scientific findings to help me decode the complex sensory profiles of cacao. The concept of TDS (Temporal Dominance of Sensations) helped me significantly to identify different flavor profiles and achieve a high grade on the final exam.",
+            es: "Esta aplicación fue desarrollada como un proyecto personal durante mi curso intensivo de cata de cacao en Perú. Al entrar en el campo sin experiencia previa en cacao, confié en hallazgos científicos para ayudarme a descifrar los complejos perfiles sensoriales del cacao. El concepto de TDS (Dominancia Temporal de Sensaciones) me ayudó significativamente a identificar diferentes perfiles de sabor y a obtener una buena calificación en el examen final."
+        },
+        futureWorkTitle: {
+            en: "Future Work",
+            es: "Trabajo Futuro"
+        },
+        futureWorkText: {
+            en: "I plan to fine-tune the profiling curve and add more analyses based on my field experience in cacao.",
+            es: "Planeo ajustar la curva de perfilado y agregar más análisis basados en mi experiencia de campo con el cacao."
+        },
+        contactText: {
+            en: "Email me if you would like to collaborate on this project:",
+            es: "Envíame un correo si deseas colaborar en este proyecto:"
         },
         resourcesTitle: {
             en: "Resources",
@@ -31,13 +59,52 @@ const ReferencesPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-cacao-50 text-gray-800 font-sans">
-            <Header />
+        <>
+
 
             <main className="w-full max-w-4xl mx-auto px-4 md:px-8 py-12 flex-grow space-y-12">
                 <h1 className="text-3xl font-bold text-cacao-900 border-b border-cacao-200 pb-4">
                     {content.title[language]}
                 </h1>
+
+                {/* Author Section */}
+                <section className="space-y-4">
+                    <h2 className="text-xl font-bold text-cacao-800 flex items-center gap-2">
+                        <User className="text-cacao-600" />
+                        {content.authorTitle[language]}
+                    </h2>
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-cacao-100 space-y-6">
+                        {/* Bio */}
+                        <div>
+                            <p className="text-lg font-medium text-cacao-900">
+                                {content.authorBio[language]}
+                            </p>
+                        </div>
+
+                        {/* Background */}
+                        <div className="space-y-2">
+                            <h3 className="font-bold text-cacao-800 text-md uppercase tracking-wide text-sm">
+                                {content.backgroundTitle[language]}
+                            </h3>
+                            <p className="text-gray-700 leading-relaxed">
+                                {content.backgroundText[language]}
+                            </p>
+                        </div>
+
+                        {/* Future Work */}
+                        <div className="space-y-2">
+                            <h3 className="font-bold text-cacao-800 text-md uppercase tracking-wide text-sm">
+                                {content.futureWorkTitle[language]}
+                            </h3>
+                            <p className="text-gray-700 leading-relaxed">
+                                {content.futureWorkText[language]}
+                            </p>
+                            <p className="text-gray-700 mt-2">
+                                {content.contactText[language]} <a href="mailto:cacao@live-by-sketch.com" className="text-blue-600 hover:underline font-medium">cacao@live-by-sketch.com</a>
+                            </p>
+                        </div>
+                    </div>
+                </section>
 
                 {/* Resources Section */}
                 <section className="space-y-4">
@@ -142,8 +209,7 @@ const ReferencesPage: React.FC = () => {
             </main>
 
             {/* Minimal Footer for this page too */}
-            <Footer isMinimal={true} />
-        </div>
+        </>
     );
 };
 

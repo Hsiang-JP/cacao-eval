@@ -1,7 +1,6 @@
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+
 import { useLanguage } from '../context/LanguageContext';
 import { ArrowLeft } from 'lucide-react';
 import SampleLibraryCard from '../components/samples/SampleLibraryCard';
@@ -71,8 +70,7 @@ const TDSDeepPage: React.FC = () => {
     const activeAttributeIds = uniqueAttributes;
 
     return (
-        <div className="flex flex-col min-h-screen bg-cacao-50 text-gray-800 font-sans">
-            <Header />
+        <>
 
             <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 md:py-8">
 
@@ -181,8 +179,7 @@ const TDSDeepPage: React.FC = () => {
 
             </main>
 
-            <Footer />
-        </div>
+        </>
     );
 };
 
@@ -238,7 +235,11 @@ const SingleViewHandler: React.FC<{ samples: StoredSample[], activeAttributeIds:
             <div className="animate-fade-in-up delay-100">
                 {activeSample.tdsProfile ? (
                     <TDSStreamGraph
-                        profile={activeSample.tdsProfile!}
+                        profile={{
+                            ...activeSample.tdsProfile!,
+                            id: activeSample.tdsProfile!.id || activeSample.id,
+                            lastModified: activeSample.tdsProfile!.lastModified || 0
+                        }}
                         allAttributeIds={activeAttributeIds}
                     />
                 ) : (

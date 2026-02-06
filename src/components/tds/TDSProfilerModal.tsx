@@ -202,9 +202,11 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
 
         const profile: TDSProfile = {
             mode,
+            id: crypto.randomUUID ? crypto.randomUUID() : Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
             events: finalEvents,
             swallowTime: swallowTime || finalDuration,
             totalDuration: finalDuration,
+            lastModified: Date.now()
         };
 
         onComplete(profile);
@@ -307,36 +309,38 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                         </button>
                     </div>
                 ) : (
-                    <div
-                        // Compact Grid: 3 cols on mobile.
-                        // Rows are calculated to fill the available height evenly.
-                        className={`grid gap-2 h-full ${mode === 'normal' ? 'grid-cols-3' : 'grid-cols-3 sm:grid-cols-5'}`}
-                        style={{
-                            touchAction: 'none',
-                            gridTemplateRows: mode === 'normal'
-                                ? 'repeat(2, 1fr)'  // 5 items, 3 cols -> 2 rows
-                                : 'repeat(5, 1fr)'  // 15 items, 3 cols -> 5 rows (on mobile)
-                        }}
-                    >
-                        {attributes.map(attrId => {
-                            const isActive = currentAttr === attrId;
-                            // color is already imported
-                            const color = getAttributeColor(attrId);
+                    <div className="h-full w-full flex justify-center">
+                        <div
+                            // Compact Grid: 3 cols always (even on desktop) to reduce mouse travel
+                            // Max width constrained to 800px
+                            className={`grid gap-2 h-full w-full max-w-[700px] grid-cols-3`}
+                            style={{
+                                touchAction: 'none',
+                                gridTemplateRows: mode === 'normal'
+                                    ? 'repeat(2, 1fr)'  // 5 items, 3 cols -> 2 rows
+                                    : 'repeat(5, 1fr)'  // 15 items, 3 cols -> 5 rows
+                            }}
+                        >
+                            {attributes.map(attrId => {
+                                const isActive = currentAttr === attrId;
+                                // color is already imported
+                                const color = getAttributeColor(attrId);
 
-                            return (
-                                <TDSButton
-                                    key={attrId}
-                                    attrId={attrId}
-                                    label={ATTRIBUTE_LABELS[attrId]?.[language] || attrId}
-                                    color={color}
-                                    inputMethod={inputMethod}
-                                    isActive={isActive}
-                                    onStart={handleButtonStart}
-                                    onStop={handleButtonStop}
-                                    disabled={state === 'finished'}
-                                />
-                            );
-                        })}
+                                return (
+                                    <TDSButton
+                                        key={attrId}
+                                        attrId={attrId}
+                                        label={ATTRIBUTE_LABELS[attrId]?.[language] || attrId}
+                                        color={color}
+                                        inputMethod={inputMethod}
+                                        isActive={isActive}
+                                        onStart={handleButtonStart}
+                                        onStop={handleButtonStop}
+                                        disabled={state === 'finished'}
+                                    />
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>

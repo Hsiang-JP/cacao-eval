@@ -74,7 +74,6 @@ export interface TDSScoreResult {
   zoneBreakdown?: {
     attack: number;
     body: number;
-    finish: number;
   };
   originalScore?: number; // Score before boost
   boostDetails?: {
@@ -106,8 +105,10 @@ export interface TDSAnalysisResult {
 
 export interface TDSProfile {
   mode: TDSMode;
+  id: string; // Evaluation ID
   events: TDSEvent[];
   swallowTime: number; // seconds from start when user clicked swallow
   totalDuration: number; // total profiling time in seconds
   analysis?: TDSAnalysisResult; // Persisted analysis
+  lastModified?: number; // For cache invalidation
 }
