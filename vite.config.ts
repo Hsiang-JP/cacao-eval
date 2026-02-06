@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   // Use '.' instead of process.cwd() to avoid TS error "Property 'cwd' does not exist on type 'Process'"
   const env = loadEnv(mode, '.', '');
   return {
-    base: '/cacao-TDS/', // Project site base path
+    base: '/cacao-eval/', // Project site base path
     plugins: [
       react(),
       VitePWA({
@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
           display: 'standalone',
           orientation: 'portrait',
           start_url: '.',
-          id: '/cacao-TDS/',
+          id: '/cacao-eval/',
           icons: [
             {
               src: 'logo-cacao.svg',
