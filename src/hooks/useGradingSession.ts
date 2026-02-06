@@ -20,6 +20,7 @@ export const useGradingSession = (sampleId: string | null) => {
     const [isEvaluationStarted, setIsEvaluationStarted] = useState(false);
     const [isGlobalQualityExpanded, setIsGlobalQualityExpanded] = useState(true);
     const [showPostSaveModal, setShowPostSaveModal] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     // Initial State Setup
     const getInitialMetadata = (): SampleMetadata => ({
@@ -186,8 +187,15 @@ export const useGradingSession = (sampleId: string | null) => {
         setIsEvaluationStarted(true);
     };
 
-    const handleReset = () => {
-        if (window.confirm(t.confirmReset)) {
+    const handleReset = async (confirmDialog?: (msg: string) => Promise<boolean>) => {
+        const confirmFn = confirmDialog || window.confirm;
+        // Logic adapter: window.confirm returns boolean synchronously, but we treat it as async or sync
+        // If we pass window.confirm, it returns true/false immediately.
+        // If we pass async modal, it awaits.
+
+        const proceed = await Promise.resolve(confirmFn(t.confirmReset));
+
+        if (proceed) {
             setSession({
                 metadata: getInitialMetadata(),
                 attributes: JSON.parse(JSON.stringify(INITIAL_ATTRIBUTES)),
@@ -199,7 +207,12 @@ export const useGradingSession = (sampleId: string | null) => {
         }
     };
 
-    const handleSaveToLibrary = async (navigate: (path: string, options?: any) => void) => {
+    const handleSaveToLibrary = async (
+        navigate: (path: string, options?: any) => void,
+        confirmDialog?: (msg: string) => Promise<boolean>
+    ) => {
+        // Fallback to window.confirm if not provided (though we aim to replace it)
+        const confirmFn = confirmDialog || (async (msg: string) => window.confirm(msg));
         try {
             // 0. STRICT CHECK: Code, Date, Evaluator
             const code = session.metadata.sampleCode.trim();
@@ -212,7 +225,7 @@ export const useGradingSession = (sampleId: string | null) => {
                 if (!evaluatorName) missing.push(language === 'es' ? 'Evaluador' : 'Evaluator');
                 if (!date) missing.push(language === 'es' ? 'Fecha' : 'Date');
 
-                alert(language === 'es'
+                setValidationError(language === 'es'
                     ? `Por favor complete los siguientes campos obligatorios antes de guardar:\n- ${missing.join('\n- ')}`
                     : `Please complete the following required fields before saving:\n- ${missing.join('\n- ')}`
                 );
@@ -232,7 +245,7 @@ export const useGradingSession = (sampleId: string | null) => {
                     return language === 'es' ? attr?.nameEs : attr?.nameEn;
                 }).join(', ');
 
-                const confirmSave = window.confirm(language === 'es'
+                const confirmSave = await confirmFn(language === 'es'
                     ? `Los siguientes campos principales tienen valor 0 (Ausente): ${missingNames}.\n\n¿Desea guardar de todos modos?`
                     : `The following core attributes are set to 0 (Absent): ${missingNames}.\n\nDo you want to save anyway?`
                 );
@@ -241,7 +254,7 @@ export const useGradingSession = (sampleId: string | null) => {
 
             // Check Global Quality (Warn only)
             if (session.globalQuality <= 0) {
-                const confirmGlobal = window.confirm(language === 'es'
+                const confirmGlobal = await confirmFn(language === 'es'
                     ? 'La Calidad Global es 0. ¿Desea guardar de todos modos?'
                     : 'Global Quality score is 0. Do you want to save anyway?'
                 );
@@ -262,7 +275,7 @@ export const useGradingSession = (sampleId: string | null) => {
                 if (sampleId && collision.id === sampleId) {
                     finalId = sampleId;
                 } else {
-                    const confirmOverwrite = window.confirm(
+                    const confirmOverwrite = await confirmFn(
                         language === 'es'
                             ? `Ya existe una muestra con código "${code}", evaluador "${evaluatorName}" y fecha "${date}". ¿Desea sobrescribirla?`
                             : `A sample with code "${code}", evaluator "${evaluatorName}", and date "${date}" already exists. Do you want to overwrite it?`
@@ -290,10 +303,17 @@ export const useGradingSession = (sampleId: string | null) => {
 
             const savedId = await dbService.saveSample(sampleData, finalId || undefined);
 
-            alert(language === 'es'
-                ? `✅ Muestra ${session.metadata.sampleCode} guardada exitosamente!`
-                : `✅ Sample ${session.metadata.sampleCode} saved successfully!`
-            );
+            setValidationError(null); // Clear any previous errors (though alerts are different)
+            // Success "Alert" -> We can just show the modal, but the user requested 'modal' for messages.
+            // The success message is actually shown in the PostSaveModal anyway?
+            // Wait, the code shows postSaveModal right after.
+            // But before that it showed an alert.
+            // Let's remove the alert completely since we have the PostSaveModal!
+
+            // alert(language === 'es'
+            //     ? `✅ Muestra ${session.metadata.sampleCode} guardada exitosamente!`
+            //     : `✅ Sample ${session.metadata.sampleCode} saved successfully!`
+            // );
 
             if (savedId !== sampleId) {
                 navigate(`/evaluate?id=${savedId}`, { replace: true });
@@ -302,7 +322,7 @@ export const useGradingSession = (sampleId: string | null) => {
 
         } catch (error) {
             console.error('Failed to save sample:', error);
-            alert(language === 'es'
+            setValidationError(language === 'es'
                 ? `❌ Error al guardar la muestra: ${error}`
                 : `❌ Failed to save sample: ${error}`
             );
@@ -338,6 +358,8 @@ export const useGradingSession = (sampleId: string | null) => {
         setIsGlobalQualityExpanded,
         showPostSaveModal,
         setShowPostSaveModal,
+        validationError, // Exposed for UI
+        setValidationError,
         getInitialMetadata, // Exposed for reset logic in UI if needed
         handlers: {
             handleMetadataChange,

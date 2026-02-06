@@ -10,6 +10,7 @@ import { ComparisonRadar } from '../components/compare/ComparisonRadar';
 import { ClusterResults } from '../components/compare/ClusterResults';
 import { SimilarityHeatmap } from '../components/compare/SimilarityHeatmap';
 import { calculateDistanceMatrix, performClustering, DistanceResult, ClusterResult } from '../services/analysisService';
+import ValidationModal from '../components/ValidationModal';
 
 const ComparePage: React.FC = () => {
     const { language } = useLanguage();
@@ -20,6 +21,7 @@ const ComparePage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [sessions, setSessions] = useState<StoredSample[]>([]);
     const [mode, setMode] = useState<'simple' | 'advanced'>('simple');
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     // Analysis State
     const [distanceData, setDistanceData] = useState<DistanceResult | null>(null);
@@ -124,7 +126,7 @@ const ComparePage: React.FC = () => {
             await generateComparisonPdf(comparisonSamples, comparisonClusters, language);
         } catch (e) {
             console.error("PDF Export failed", e);
-            alert(language === 'es' ? "Error al generar el PDF." : "Failed to generate PDF.");
+            setValidationError(language === 'es' ? "Error al generar el PDF." : "Failed to generate PDF.");
         }
     };
 
@@ -295,6 +297,12 @@ const ComparePage: React.FC = () => {
 
             </main>
             <Footer />
+
+            <ValidationModal
+                isOpen={!!validationError}
+                onClose={() => setValidationError(null)}
+                message={validationError || ''}
+            />
         </div>
     );
 };

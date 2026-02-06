@@ -11,6 +11,9 @@ import { CSV_HEADERS_EN, CSV_HEADERS_ES } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
 import Footer from '../components/Footer';
 import { matchesSearch } from '../utils/searchLogic';
+import ValidationModal from '../components/ValidationModal';
+import ConfirmationModal from '../components/ConfirmationModal';
+import InputModal from '../components/InputModal';
 
 const SamplesPage: React.FC = () => {
     const { language, t } = useLanguage();
@@ -19,6 +22,12 @@ const SamplesPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    // Modal States
+    const [validationMsg, setValidationMsg] = useState<{ title?: string, msg: string } | null>(null);
+    const [confirmState, setConfirmState] = useState<{ message: string, onConfirm: () => void, isDangerous?: boolean } | null>(null);
+    const [inputState, setInputState] = useState<{ title: string, message?: string, defaultValue: string, onConfirm: (val: string) => void } | null>(null);
+
 
     useEffect(() => {
         loadSamples();
@@ -36,20 +45,24 @@ const SamplesPage: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: string, code: string) => {
-        if (window.confirm(language === 'es' ? `¿Eliminar muestra ${code}?` : `Delete sample ${code}?`)) {
-            try {
-                await dbService.deleteSample(id);
-                setSamples(prev => prev.filter(s => s.id !== id));
-                setSelectedIds(prev => {
-                    const next = new Set(prev);
-                    next.delete(id);
-                    return next;
-                });
-            } catch (error) {
-                console.error('Failed to delete sample:', error);
+    const handleDelete = (id: string, code: string) => {
+        setConfirmState({
+            message: language === 'es' ? `¿Eliminar muestra ${code}?` : `Delete sample ${code}?`,
+            isDangerous: true,
+            onConfirm: async () => {
+                try {
+                    await dbService.deleteSample(id);
+                    setSamples(prev => prev.filter(s => s.id !== id));
+                    setSelectedIds(prev => {
+                        const next = new Set(prev);
+                        next.delete(id);
+                        return next;
+                    });
+                } catch (error) {
+                    console.error('Failed to delete sample:', error);
+                }
             }
-        }
+        });
     };
 
     const toggleSelection = (id: string) => {
@@ -82,7 +95,7 @@ const SamplesPage: React.FC = () => {
 
     const handleCompare = () => {
         if (selectedIds.size < 2) {
-            alert(language === 'es' ? 'Seleccione al menos 2 muestras para comparar' : 'Select at least 2 samples to compare');
+            setValidationMsg({ msg: language === 'es' ? 'Seleccione al menos 2 muestras para comparar' : 'Select at least 2 samples to compare' });
             return;
         }
         const ids = Array.from(selectedIds).join(',');
@@ -99,25 +112,30 @@ const SamplesPage: React.FC = () => {
 
         // Prompt for filename
         const defaultName = `cacao_eval_${getDateStringForFilename()}`;
-        const userInput = window.prompt(language === 'es' ? 'Nombre del archivo CSV:' : 'Enter filename for CSV:', defaultName);
 
-        if (userInput === null) return; // Cancelled
-        const filename = (userInput || defaultName).endsWith('.csv') ? (userInput || defaultName) : `${userInput || defaultName}.csv`;
+        setInputState({
+            title: language === 'es' ? 'Exportar CSV' : 'Export CSV',
+            message: language === 'es' ? 'Nombre del archivo CSV:' : 'Enter filename for CSV:',
+            defaultValue: defaultName,
+            onConfirm: async (userInput) => {
+                const filename = userInput.endsWith('.csv') ? userInput : `${userInput}.csv`;
 
-        const { generateCSVRow } = await import('../services/csvService');
-        const headers = language === 'es' ? CSV_HEADERS_ES : CSV_HEADERS_EN;
+                const { generateCSVRow } = await import('../services/csvService');
+                const headers = language === 'es' ? CSV_HEADERS_ES : CSV_HEADERS_EN;
 
-        const rows = samplesToExport.map(s => generateCSVRow(s, language));
+                const rows = samplesToExport.map(s => generateCSVRow(s, language));
 
-        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
     };
 
     const handleBulkPdf = async () => {
@@ -127,37 +145,42 @@ const SamplesPage: React.FC = () => {
 
         // Prompt for filename
         const defaultName = `cacao_eval_${getDateStringForFilename()}`;
-        const userInput = window.prompt(language === 'es' ? 'Nombre del archivo PDF:' : 'Enter filename for PDF:', defaultName);
 
-        if (userInput === null) return; // Cancelled
-        const filename = (userInput || defaultName); // Extension handled by pdfService if missing
+        setInputState({
+            title: language === 'es' ? 'Exportar PDF' : 'Export PDF',
+            message: language === 'es' ? 'Nombre del archivo PDF:' : 'Enter filename for PDF:',
+            defaultValue: defaultName,
+            onConfirm: async (userInput) => {
+                const filename = userInput;
 
-        try {
-            const { generatePdf } = await import('../services/pdfService');
-            // Map StoredSample to GradingSession structure
-            const sessions = samplesToExport.map(s => ({
-                metadata: {
-                    sampleCode: s.sampleCode,
-                    date: s.date,
-                    time: s.time,
-                    evaluator: s.evaluator,
-                    evaluationType: s.evaluationType,
-                    sampleInfo: s.sampleInfo,
-                    notes: s.notes,
-                    producerRecommendations: s.producerRecommendations
-                },
-                attributes: s.attributes,
-                globalQuality: s.globalQuality,
-                selectedQualityId: s.selectedQualityId,
-                language: language,
-                tdsProfile: s.tdsProfile // Include TDS Profile in export
-            }));
+                try {
+                    const { generatePdf } = await import('../services/pdfService');
+                    // Map StoredSample to GradingSession structure
+                    const sessions = samplesToExport.map(s => ({
+                        metadata: {
+                            sampleCode: s.sampleCode,
+                            date: s.date,
+                            time: s.time,
+                            evaluator: s.evaluator,
+                            evaluationType: s.evaluationType,
+                            sampleInfo: s.sampleInfo,
+                            notes: s.notes,
+                            producerRecommendations: s.producerRecommendations
+                        },
+                        attributes: s.attributes,
+                        globalQuality: s.globalQuality,
+                        selectedQualityId: s.selectedQualityId,
+                        language: language,
+                        tdsProfile: s.tdsProfile // Include TDS Profile in export
+                    }));
 
-            await generatePdf(sessions, undefined, filename);
-        } catch (error) {
-            console.error("PDF Export failed", error);
-            alert(language === 'es' ? 'Error al generar PDF' : 'Failed to generate PDF');
-        }
+                    await generatePdf(sessions, undefined, filename);
+                } catch (error) {
+                    console.error("PDF Export failed", error);
+                    setValidationMsg({ msg: language === 'es' ? 'Error al generar PDF' : 'Failed to generate PDF' });
+                }
+            }
+        });
     };
 
     const handleImportClick = () => {
@@ -184,10 +207,13 @@ const SamplesPage: React.FC = () => {
                     const skippedCount = importedSamples.length - validImportedSamples.length;
 
                     if (skippedCount > 0) {
-                        alert(language === 'es'
-                            ? `Se omitieron ${skippedCount} entradas por faltar datos de identificación (Código, Fecha o Evaluador).`
-                            : `Skipped ${skippedCount} entries due to missing identification data (Code, Date, or Evaluator).`
-                        );
+                        setValidationMsg({
+                            type: 'warning',
+                            title: language === 'es' ? 'Importación Incompleta' : 'Incomplete Import',
+                            msg: language === 'es'
+                                ? `Se omitieron ${skippedCount} entradas por faltar datos de identificación (Código, Fecha o Evaluador).`
+                                : `Skipped ${skippedCount} entries due to missing identification data (Code, Date, or Evaluator).`
+                        } as any);
                     }
 
                     if (validImportedSamples.length > 0) {
@@ -213,15 +239,7 @@ const SamplesPage: React.FC = () => {
 
                         const samplesToImport: any[] = [...validImportedSamples];
 
-                        if (duplicates.length > 0) {
-                            const confirmMsg = language === 'es'
-                                ? `Se encontraron ${duplicates.length} muestras duplicadas (mismo Código, Evaluador y Fecha). \n\nSi continúa, estas muestras serán REEMPLAZADAS con los datos del CSV.\n\n¿Desea continuar?`
-                                : `Found ${duplicates.length} duplicate samples (same Code, Evaluator, and Date). \n\nProceeding will REPLACE these samples with the data from the CSV.\n\nDo you want to proceed?`;
-
-                            if (!window.confirm(confirmMsg)) {
-                                return; // Abort whole import
-                            }
-
+                        const proceedImport = async () => {
                             // Assign existing IDs to the imported objects to trigger UPDATE (Upsert)
                             duplicates.forEach(dup => {
                                 samplesToImport[dup.importIdx] = {
@@ -230,21 +248,38 @@ const SamplesPage: React.FC = () => {
                                     createdAt: dup.createdAt // Preserve original creation time
                                 };
                             });
+
+                            // Upsert
+                            await dbService.importSamples(samplesToImport);
+
+                            await loadSamples(); // Refresh list
+                            setValidationMsg({
+                                title: language === 'es' ? 'Importación Exitosa' : 'Import Successful',
+                                type: 'info',
+                                msg: language === 'es'
+                                    ? `Proceso finalizado: ${duplicates.length} reemplazadas, ${validImportedSamples.length - duplicates.length} nuevas.`
+                                    : `Process complete: ${duplicates.length} replaced, ${validImportedSamples.length - duplicates.length} new samples imported.`
+                            } as any);
+                        };
+
+                        if (duplicates.length > 0) {
+                            const confirmMsg = language === 'es'
+                                ? `Se encontraron ${duplicates.length} muestras duplicadas (mismo Código, Evaluador y Fecha). \n\nSi continúa, estas muestras serán REEMPLAZADAS con los datos del CSV.\n\n¿Desea continuar?`
+                                : `Found ${duplicates.length} duplicate samples (same Code, Evaluator, and Date). \n\nProceeding will REPLACE these samples with the data from the CSV.\n\nDo you want to proceed?`;
+
+                            setConfirmState({
+                                message: confirmMsg,
+                                onConfirm: proceedImport
+                            });
+                        } else {
+                            await proceedImport();
                         }
-
-                        // Upsert
-                        await dbService.importSamples(samplesToImport);
-
-                        await loadSamples(); // Refresh list
-                        alert(language === 'es'
-                            ? `Proceso finalizado: ${duplicates.length} reemplazadas, ${validImportedSamples.length - duplicates.length} nuevas.`
-                            : `Process complete: ${duplicates.length} replaced, ${validImportedSamples.length - duplicates.length} new samples imported.`);
                     } else {
-                        alert(language === 'es' ? 'No se encontraron muestras válidas en el archivo CSV.' : 'No valid samples found in CSV.');
+                        setValidationMsg({ msg: language === 'es' ? 'No se encontraron muestras válidas en el archivo CSV.' : 'No valid samples found in CSV.' });
                     }
                 } catch (error) {
                     console.error('Import failed', error);
-                    alert(language === 'es' ? 'Error al importar muestras.' : 'Failed to import samples.');
+                    setValidationMsg({ msg: language === 'es' ? 'Error al importar muestras.' : 'Failed to import samples.' });
                 }
             }
         });
@@ -418,6 +453,31 @@ const SamplesPage: React.FC = () => {
                 }
             </main >
             <Footer />
+
+            <ValidationModal
+                isOpen={!!validationMsg}
+                onClose={() => setValidationMsg(null)}
+                title={validationMsg?.title}
+                message={validationMsg?.msg || ''}
+                type={(validationMsg as any)?.type || 'error'}
+            />
+
+            <ConfirmationModal
+                isOpen={!!confirmState}
+                onClose={() => setConfirmState(null)}
+                onConfirm={confirmState?.onConfirm || (() => { })}
+                message={confirmState?.message || ''}
+                isDangerous={confirmState?.isDangerous}
+            />
+
+            <InputModal
+                isOpen={!!inputState}
+                onClose={() => setInputState(null)}
+                onConfirm={inputState?.onConfirm || (() => { })}
+                title={inputState?.title}
+                message={inputState?.message}
+                defaultValue={inputState?.defaultValue}
+            />
         </div >
     );
 };

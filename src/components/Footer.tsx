@@ -14,8 +14,8 @@ const Footer: React.FC<FooterProps> = ({ isMinimal = false }) => {
             <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-4">
                 <span>
                     {language === 'es'
-                        ? "Este formulario de evaluación ha sido reagrupado del formulario Excel de Cacao of Excellence"
-                        : "This evaluation form is regrouped from the Cacao of Excellence Excel form"}
+                        ? "Esta evaluación digital se basa en las directrices de Cacao of Excellence (CoEx) y se ofrece bajo la licencia Creative Commons Atribución‑NoComercial 4.0 Internacional (CC BY‑NC 4.0). Solo para uso no comercial."
+                        : "This digital evaluation is based on the Cacao of Excellence (CoEx) guidelines and is provided under the Creative Commons Attribution‑NonCommercial 4.0 International License (CC BY‑NC 4.0). Non‑commercial use only."}
                 </span>
                 <span className="hidden md:inline text-cacao-400">|</span>
                 {!isMinimal && (

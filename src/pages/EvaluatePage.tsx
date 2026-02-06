@@ -9,6 +9,8 @@ import Footer from '../components/Footer';
 import TDSProfilerModal from '../components/tds/TDSProfilerModal';
 import TDSSummary from '../components/tds/TDSSummary';
 import TDSModeSelector from '../components/tds/TDSModeSelector';
+import ValidationModal from '../components/ValidationModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { GradingSession, SampleMetadata, QualityAttribute, SubAttribute, TDSMode, TDSProfile, TDSScoreResult, TDSAnalysisResult } from '../types';
 // Note: Constants and Calculator imports moved to hooks, but we need INITIAL_ATTRIBUTES for local resets if used
 import { INITIAL_ATTRIBUTES } from '../constants';
@@ -29,6 +31,30 @@ const EvaluatePage: React.FC = () => {
   const sampleId = searchParams.get('id');
   const chartRef = useRef<any>(null);
 
+  // Modal State for Async Confirmation
+  const [confirmState, setConfirmState] = useState<{ message: string, resolve: (v: boolean) => void } | null>(null);
+
+  const requestConfirmation = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setConfirmState({ message, resolve });
+    });
+  };
+
+  const onConfirmAction = () => {
+    if (confirmState) {
+      confirmState.resolve(true);
+      setConfirmState(null);
+    }
+  };
+
+  const onCancelAction = () => {
+    if (confirmState) {
+      confirmState.resolve(false);
+      setConfirmState(null);
+    }
+  };
+
+
   // Use Custom Hook for Grading Session
   const {
     session,
@@ -40,6 +66,8 @@ const EvaluatePage: React.FC = () => {
     setIsGlobalQualityExpanded,
     showPostSaveModal,
     setShowPostSaveModal,
+    validationError,
+    setValidationError,
     getInitialMetadata,
     handlers: {
       handleMetadataChange,
@@ -310,7 +338,7 @@ const EvaluatePage: React.FC = () => {
                 <div className="space-y-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => handleSaveToLibrary(navigate)}
+                    onClick={() => handleSaveToLibrary(navigate, requestConfirmation)}
                     disabled={!isEvaluationStarted}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 border border-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -330,7 +358,7 @@ const EvaluatePage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={handleReset}
+                  onClick={() => handleReset(requestConfirmation)}
                   className="w-full bg-white border border-gray-300 text-gray-600 font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
                 >
                   <RefreshCw size={18} /> {t.reset}
@@ -427,6 +455,21 @@ const EvaluatePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Validation Error Modal (Replaces Alerts) */}
+      <ValidationModal
+        isOpen={!!validationError}
+        onClose={() => setValidationError(null)}
+        message={validationError || ''}
+      />
+
+      {/* Confirmation Modal (Async) */}
+      <ConfirmationModal
+        isOpen={!!confirmState}
+        onClose={onCancelAction}
+        onConfirm={onConfirmAction}
+        message={confirmState?.message || ''}
+      />
 
       <Footer />
       <MobileNav
