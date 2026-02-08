@@ -1,7 +1,6 @@
-import { StoredSample } from './dbService';
-import { CSV_HEADERS_EN, CSV_HEADERS_ES, INITIAL_ATTRIBUTES, INITIAL_QUALITY_ATTRIBUTES } from '../constants';
-import { FlavorAttribute, TDSMode, TDSAnalysisResult, TDSScoreResult, TDSEvent } from '../types';
-import { analyzeTDS } from '../utils/tdsCalculator';
+import { StoredSample } from '../types';
+import { CSV_HEADERS_EN, CSV_HEADERS_ES, INITIAL_ATTRIBUTES, INITIAL_QUALITY_ATTRIBUTES, currentConfig } from '../constants';
+import { FlavorAttribute, TDSMode, TDSEvent } from '../types';
 
 /**
  * Parse TDS events from JSON.
@@ -14,218 +13,8 @@ const parseEventsFromJSON = (json: string): TDSEvent[] => {
     }
 };
 
-// Helper to export TDS intervals as JSON
-const getTDSIntervalsJson = (sample: StoredSample, attrId: string): string => {
-    if (!sample.tdsProfile?.events) return '';
-    const events = sample.tdsProfile.events.filter(e => e.attrId === attrId);
-    if (events.length === 0) return '';
-
-    const intervals = events.map(e => ({
-        start: Math.round(e.start * 100) / 100,
-        end: Math.round(e.end * 100) / 100
-    }));
-
-    // Return JSON string escaped for CSV
-    return `"${JSON.stringify(intervals).replace(/"/g, '""')}"`;
-};
-
 export const generateCSVRow = (sample: StoredSample, language: 'en' | 'es'): (string | number)[] => {
-    const getDate = () => {
-        if (language === 'es' && sample.date) {
-            const parts = sample.date.split('-');
-            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-        }
-        return sample.date;
-    };
-
-    // 1. Create a Map for O(1) attribute access
-    const attrMap = new Map<string, FlavorAttribute>();
-    sample.attributes.forEach(attr => attrMap.set(attr.id, attr));
-
-    // 2. Helper to get scores safely
-    const getScore = (attrId: string, subId?: string): number => {
-        const attr = attrMap.get(attrId);
-        if (!attr) return 0;
-        if (subId && attr.subAttributes) {
-            return attr.subAttributes.find(s => s.id === subId)?.score || 0;
-        }
-        return attr.score;
-    };
-
-    // 3. Helper to get sub-attribute description safely
-    const getDescription = (attrId: string, subId: string): string => {
-        const attr = attrMap.get(attrId);
-        return attr?.subAttributes?.find(s => s.id === subId)?.description || '';
-    };
-
-    // 4. Prepare TDS Analysis Data
-    let analysis: TDSAnalysisResult | null = null;
-    if (sample.tdsProfile) {
-        if (sample.tdsProfile.analysis) {
-            analysis = sample.tdsProfile.analysis;
-        } else {
-            try {
-                analysis = analyzeTDS(sample.tdsProfile);
-            } catch (e) {
-                // Ignore error
-            }
-        }
-    }
-
-    const getTDSData = (attrId: string): { duration: string, score: string } => {
-        if (!analysis || !analysis.scores) return { duration: '', score: '' };
-
-        let result: TDSScoreResult | undefined;
-        if (analysis.scores instanceof Map) {
-            result = analysis.scores.get(attrId);
-        } else {
-            result = (analysis.scores as any)[attrId];
-        }
-
-        if (!result) return { duration: '', score: '' };
-
-        return {
-            duration: result.durationPercent.toFixed(1) + '%',
-            score: result.score.toString()
-        };
-    };
-
-    const getTDSMetric = (key: 'aromaIntensity' | 'aftertasteIntensity' | 'aftertasteQuality' | 'attackPhaseDuration'): string | number => {
-        if (!analysis) return '';
-        return analysis[key] || '';
-    };
-
-    // 5. Construct the row
-    return [
-        "", // Original Ordering
-        getDate(),
-        sample.time,
-        sample.evaluator,
-        sample.sampleCode,
-        sample.sampleInfo,
-        getScore('cacao'),
-
-        // Acidity
-        getScore('acidity'),
-        getScore('acidity', 'acid_fruity'),
-        getScore('acidity', 'acid_acetic'),
-        getScore('acidity', 'acid_lactic'),
-        getScore('acidity', 'acid_mineral'),
-
-        getScore('bitterness'),
-        getScore('astringency'),
-
-        // Fresh Fruit
-        getScore('fresh_fruit'),
-        getScore('fresh_fruit', 'ff_berry'),
-        getScore('fresh_fruit', 'ff_citrus'),
-        getScore('fresh_fruit', 'ff_dark'),
-        getScore('fresh_fruit', 'ff_pulp'),
-        getScore('fresh_fruit', 'ff_tropical'),
-
-        // Browned Fruit
-        getScore('browned_fruit'),
-        getScore('browned_fruit', 'bf_dried'),
-        getScore('browned_fruit', 'bf_brown'),
-        getScore('browned_fruit', 'bf_overripe'),
-
-        // Vegetal
-        getScore('vegetal'),
-        getScore('vegetal', 'veg_green'),
-        getScore('vegetal', 'veg_earthy'),
-
-        // Floral
-        getScore('floral'),
-        getScore('floral', 'flo_orange'),
-        getScore('floral', 'flo_flowers'),
-
-        // Woody
-        getScore('woody'),
-        getScore('woody', 'wood_light'),
-        getScore('woody', 'wood_dark'),
-        getScore('woody', 'wood_resin'),
-
-        // Spice
-        getScore('spice'),
-        getScore('spice', 'sp_spices'),
-        getScore('spice', 'sp_tobacco'),
-        getScore('spice', 'sp_savory'),
-
-        // Nutty
-        getScore('nutty'),
-        getScore('nutty', 'nut_meat'),
-        getScore('nutty', 'nut_skin'),
-
-        getScore('caramel'),
-        getScore('sweetness'),
-        getScore('roast'),
-
-        // Defects
-        getScore('defects'),
-        getScore('defects', 'def_dirty'),
-        getScore('defects', 'def_mold'),
-        getScore('defects', 'def_moldy'),
-        getScore('defects', 'def_meaty'),
-        getScore('defects', 'def_over'),
-        getScore('defects', 'def_manure'),
-        getScore('defects', 'def_smoke'),
-        getScore('defects', 'def_other'),
-        `"${getDescription('defects', 'def_other').replace(/"/g, '""')}"`,
-
-        `"${sample.notes.replace(/"/g, '""')}"`,
-        `"${sample.producerRecommendations.replace(/"/g, '""')}"`,
-        sample.globalQuality,
-        sample.selectedQualityId === 'uniqueness' ? 10 : 0,
-        sample.selectedQualityId === 'complexity' ? 10 : 0,
-        sample.selectedQualityId === 'balance' ? 10 : 0,
-        sample.selectedQualityId === 'cleanliness' ? 10 : 0,
-        sample.selectedQualityId === 'q_acidity' ? 10 : 0,
-        sample.selectedQualityId === 'q_astringency' ? 10 : 0,
-        sample.selectedQualityId === 'q_bitterness' ? 10 : 0,
-        sample.selectedQualityId === 'q_aftertaste' ? 10 : 0,
-
-        // TDS Columns
-        sample.tdsProfile?.mode || '',
-        sample.tdsProfile?.totalDuration || '',
-        sample.tdsProfile?.swallowTime || '',
-        sample.tdsProfile?.events ? `"${JSON.stringify(sample.tdsProfile.events).replace(/"/g, '""')}"` : '',
-        // Aggregated TDS intervals per attribute
-        getTDSIntervalsJson(sample, 'cacao'),
-        getTDSIntervalsJson(sample, 'acidity'),
-        getTDSIntervalsJson(sample, 'bitterness'),
-        getTDSIntervalsJson(sample, 'astringency'),
-        getTDSIntervalsJson(sample, 'roast'),
-        getTDSIntervalsJson(sample, 'fresh_fruit'),
-        getTDSIntervalsJson(sample, 'browned_fruit'),
-        getTDSIntervalsJson(sample, 'vegetal'),
-        getTDSIntervalsJson(sample, 'floral'),
-        getTDSIntervalsJson(sample, 'woody'),
-        getTDSIntervalsJson(sample, 'spice'),
-        getTDSIntervalsJson(sample, 'nutty'),
-        getTDSIntervalsJson(sample, 'caramel'),
-        getTDSIntervalsJson(sample, 'sweetness'),
-        getTDSIntervalsJson(sample, 'defects'),
-
-        // New columns: Aroma & Aftertaste Intensity/Quality
-        getTDSMetric('aromaIntensity'),
-        getTDSMetric('aftertasteIntensity'),
-        getTDSMetric('aftertasteQuality'),
-        // Dominant Aftertaste and Aftertaste Boosts
-        analysis?.dominantAftertaste || '',
-        analysis?.aftertasteBoosts?.length
-            ? analysis.aftertasteBoosts.map(b => `${b.attrId} +${b.amount}`).join(', ')
-            : '',
-        getTDSMetric('attackPhaseDuration'), // Attack Duration
-
-        // Detailed TDS Metrics (Duration %, Score)
-        // Order must match constants.ts
-        ...['cacao', 'acidity', 'bitterness', 'astringency', 'roast', 'fresh_fruit', 'browned_fruit',
-            'vegetal', 'floral', 'woody', 'spice', 'nutty', 'caramel', 'sweetness', 'defects']
-            .flatMap(id => {
-                const d = getTDSData(id);
-                return [d.duration, d.score];
-            })
-    ];
+    return currentConfig.csv.getRow(sample, language);
 };
 
 
@@ -281,7 +70,7 @@ export const parseSamplesFromCSV = (data: any[], language: 'en' | 'es'): Omit<St
         }
 
         // Map Attributes
-        sample.attributes.forEach((attr: any) => {
+        sample.attributes.forEach((attr: FlavorAttribute) => {
             attr.score = getNumber(row, attr.csvHeaderEn, attr.csvHeaderEs);
 
             if (attr.subAttributes) {
@@ -300,7 +89,7 @@ export const parseSamplesFromCSV = (data: any[], language: 'en' | 'es'): Omit<St
         let maxQualityScore = 0;
         let selectedQualityId = undefined;
 
-        INITIAL_QUALITY_ATTRIBUTES.forEach((q: any) => {
+        INITIAL_QUALITY_ATTRIBUTES.forEach((q) => {
             const score = getNumber(row, q.csvHeaderEn, q.csvHeaderEs);
             if (score > maxQualityScore) {
                 maxQualityScore = score;
@@ -321,6 +110,7 @@ export const parseSamplesFromCSV = (data: any[], language: 'en' | 'es'): Omit<St
 
             if (events.length > 0) {
                 sample.tdsProfile = {
+                    id: crypto.randomUUID(),
                     mode: tdsModeStr as TDSMode,
                     totalDuration: getNumber(row, "TDS Total Duration (s)", "Duración Total TDS (s)"),
                     swallowTime: getNumber(row, "TDS Swallow Time (s)", "Tiempo de Tragado TDS (s)"),

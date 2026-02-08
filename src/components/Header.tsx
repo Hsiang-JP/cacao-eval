@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Languages } from 'lucide-react';
-import { TRANSLATIONS } from '../constants';
 import GuidelinesModal from './GuidelinesModal';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { currentConfig } from '../constants';
 
 const Header: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
@@ -11,30 +11,22 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Local images from the public/ folder
-  const FLAVOR_WHEEL_URL_EN = "flavor_wheel_en.png";
-  const FLAVOR_WHEEL_URL_ES = "flavor_wheel_es.png";
-
-  const SCORE_INSTRUCTION_URL_EN = "score_instruction_en.png";
-  const SCORE_INSTRUCTION_URL_ES = "score_instruction_es.png";
-
-  const currentWheelUrl = language === 'es' ? FLAVOR_WHEEL_URL_ES : FLAVOR_WHEEL_URL_EN;
-  const currentScoreUrl = language === 'es' ? SCORE_INSTRUCTION_URL_ES : SCORE_INSTRUCTION_URL_EN;
+  // Unused constants removed
 
   return (
     <>
-      <header className="bg-cacao-900 text-cacao-200 py-6 px-4 shadow-lg sticky top-0 z-50">
+      <header className="bg-brand-900 text-brand-200 py-6 px-4 shadow-lg sticky top-0 z-50">
         <div className="w-full px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
 
           {/* Left: Logo & Title */}
           {/* Left: Logo & Title */}
           <div className="flex items-center gap-3 flex-1">
             <div className="flex-shrink-0">
-              <img src="logo-cacao.svg" alt="Cacao flavor profiling Logo" className="h-12 w-auto" />
+              <img src={currentConfig.assets.logo} alt={`${currentConfig.name[language]} flavor profiling Logo`} className="h-12 w-auto" />
             </div>
             <div>
-              <h1 className="font-serif text-2xl font-bold tracking-wide text-cacao-50">{t.title}</h1>
-              <p className="text-cacao-300 text-xs tracking-widest uppercase">{t.subtitle}</p>
+              <h1 className="font-serif text-2xl font-bold tracking-wide text-brand-50">{t('title')}</h1>
+              <p className="text-brand-300 text-xs tracking-widest uppercase">{t('subtitle')}</p>
             </div>
           </div>
 
@@ -42,7 +34,7 @@ const Header: React.FC = () => {
           <div className="flex justify-center">
             <button
               onClick={() => setLanguage(language === 'en' ? 'es' : 'en')}
-              className="flex items-center gap-2 text-cacao-200 hover:text-white transition-colors bg-cacao-800 px-4 py-1.5 rounded-full border border-cacao-700 shadow-sm"
+              className="flex items-center gap-2 text-brand-200 hover:text-white transition-colors bg-brand-800 px-4 py-1.5 rounded-full border border-brand-700 shadow-sm"
             >
               <Languages size={16} /> {language === 'en' ? 'Español' : 'English'}
             </button>
@@ -52,23 +44,23 @@ const Header: React.FC = () => {
           <div className="flex gap-4 text-sm font-medium items-center flex-1 justify-end">
             <button
               onClick={() => navigate('/evaluate')}
-              className={`flex items-center gap-2 transition-colors ${location.pathname === '/evaluate' ? 'text-white font-bold' : 'text-cacao-200 hover:text-white'}`}
+              className={`flex items-center gap-2 transition-colors ${location.pathname === '/evaluate' ? 'text-white font-bold' : 'text-brand-200 hover:text-white'}`}
             >
-              {t.evaluation}
+              {t('evaluation')}
             </button>
 
             <button
               onClick={() => navigate('/samples')}
-              className={`flex items-center gap-2 transition-colors ${location.pathname === '/samples' ? 'text-white font-bold' : 'text-cacao-200 hover:text-white'}`}
+              className={`flex items-center gap-2 transition-colors ${location.pathname === '/samples' ? 'text-white font-bold' : 'text-brand-200 hover:text-white'}`}
             >
-              {t.sampleLibrary}
+              {t('sampleLibrary')}
             </button>
 
             <button
               onClick={() => setIsGuidelinesOpen(true)}
-              className="flex items-center gap-2 text-cacao-200 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-brand-200 hover:text-white transition-colors"
             >
-              {t.guidelines}
+              {t('guidelines')}
             </button>
           </div>
         </div>

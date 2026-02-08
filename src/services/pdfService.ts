@@ -2,8 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GradingSession, FlavorAttribute } from '../types';
 import { ATTRIBUTE_LABELS } from '../data/attributes';
+import { currentConfig } from '../constants';
 import { Chart, registerables } from 'chart.js';
-import { INITIAL_QUALITY_ATTRIBUTES, INITIAL_ATTRIBUTES } from '../constants';
 import { getAttributeColor } from '../utils/colors';
 import { analyzeTDS } from '../utils/tdsCalculator';
 import { formatDateForDisplay, getDateStringForFilename } from '../utils/dateUtils';
@@ -29,10 +29,7 @@ const generateChartImage = (attributes: FlavorAttribute[], language: 'en' | 'es'
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Order logic from FlavorRadar.tsx
-    const order = [
-      'cacao', 'acidity', 'bitterness', 'astringency', 'fresh_fruit', 'browned_fruit',
-      'vegetal', 'floral', 'woody', 'spice', 'nutty', 'caramel', 'sweetness', 'defects', 'roast'
-    ];
+    const order = currentConfig.meta.radarAttributeIds || currentConfig.attributes.map(a => a.id);
 
     const getLabel = (id: string, attr: FlavorAttribute | undefined) => {
       // 1. Try generic attribute labels (covers core, specific attributes)
@@ -64,7 +61,7 @@ const generateChartImage = (attributes: FlavorAttribute[], language: 'en' | 'es'
     // Custom plugin to draw white background
     const whiteBackgroundPlugin = {
       id: 'custom_white_bg',
-      beforeDraw: (chart: any) => {
+      beforeDraw: (chart: Chart) => {
         const { ctx, width, height } = chart;
         ctx.save();
         ctx.fillStyle = '#FFFFFF';
@@ -194,7 +191,7 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
 
     let qualityText = '-';
     if (session.selectedQualityId) {
-      const qualityAttr = INITIAL_QUALITY_ATTRIBUTES.find(q => q.id === session.selectedQualityId);
+      const qualityAttr = currentConfig.qualityAttributes.find(q => q.id === session.selectedQualityId);
       if (qualityAttr) {
         qualityText = isEs ? qualityAttr.nameEs : qualityAttr.nameEn;
       }
@@ -405,43 +402,32 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
         currentY += 5;
 
         // Hydrate map if it's an object
-        let scoresEntries: [string, any][] = [];
-        if (analysis.scores instanceof Map) {
-          scoresEntries = Array.from(analysis.scores.entries());
-        } else {
-          scoresEntries = Object.entries(analysis.scores as any);
-        }
+        const tableRows = currentConfig.attributes.map((attr) => {
+          const attrId = attr.id;
+          let result: any; // TDSScoreResult
 
-        const sortedScores = scoresEntries
-          .filter(([_, res]) => res.durationPercent > 0)
-          .sort((a, b) => {
-            // Sort by the order defined in INITIAL_ATTRIBUTES (Standard CoEx order)
-            const idxA = INITIAL_ATTRIBUTES.findIndex(attr => attr.id === a[0]);
-            const idxB = INITIAL_ATTRIBUTES.findIndex(attr => attr.id === b[0]);
-            // Put unknown attributes at the end
-            const safeIdxA = idxA === -1 ? 999 : idxA;
-            const safeIdxB = idxB === -1 ? 999 : idxB;
-            return safeIdxA - safeIdxB;
-          });
-
-        const tableRows = sortedScores.map(([attrId, result]) => {
-          const attr = session.attributes.find(a => a.id === attrId) ||
-            INITIAL_QUALITY_ATTRIBUTES.find(a => a.id === attrId);
-
-          let name = attrId;
-          if (attr) {
-            name = isEs ? attr.nameEs : attr.nameEn;
-          } else {
-            name = attrId.charAt(0).toUpperCase() + attrId.slice(1).replace('_', ' ');
+          if (analysis && analysis.scores) {
+            if (analysis.scores instanceof Map) {
+              result = analysis.scores.get(attrId);
+            } else {
+              result = (analysis.scores as any)[attrId];
+            }
           }
 
-          const isBoosted = result.originalScore !== undefined && result.originalScore < result.score;
-          const scoreDisplay = isBoosted ? `${result.score} (*)` : result.score.toString();
+          // Use found result or default to zero
+          const score = result ? result.score : 0;
+          const durationPercent = result ? result.durationPercent : 0;
+
+          const name = isEs ? attr.nameEs : attr.nameEn;
+
+          // Check for boost
+          const isBoosted = result && result.originalScore !== undefined && result.originalScore < result.score;
+          const scoreDisplay = isBoosted ? `${score} (*)` : score.toString();
 
           return [
             "",
             name,
-            `${result.durationPercent.toFixed(1)}%`,
+            `${durationPercent.toFixed(1)}%`,
             scoreDisplay
           ];
         });
@@ -468,8 +454,8 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
           didDrawCell: (data) => {
             if (data.section === 'body' && data.column.index === 0) {
               const rowIndex = data.row.index;
-              if (rowIndex < sortedScores.length) {
-                const attrId = sortedScores[rowIndex][0];
+              if (rowIndex < currentConfig.attributes.length) {
+                const attrId = currentConfig.attributes[rowIndex].id;
                 const colorHex = getAttributeColor(attrId);
 
                 // Calculate center
@@ -528,27 +514,15 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
 
         // 5. Dominant Aftertaste + Aftertaste Boosts
         if (analysis) {
-          const attrLabels: Record<string, { en: string; es: string }> = {
-            cacao: { en: 'Cacao', es: 'Cacao' },
-            acidity: { en: 'Acidity', es: 'Acidez' },
-            bitterness: { en: 'Bitterness', es: 'Amargor' },
-            astringency: { en: 'Astringency', es: 'Astringencia' },
-            roast: { en: 'Roast', es: 'Tostado' },
-            fresh_fruit: { en: 'Fresh Fruit', es: 'Fruta Fresca' },
-            browned_fruit: { en: 'Browned Fruit', es: 'Fruta Marrón' },
-            vegetal: { en: 'Vegetal', es: 'Vegetal' },
-            floral: { en: 'Floral', es: 'Floral' },
-            woody: { en: 'Woody', es: 'Madera' },
-            spice: { en: 'Spice', es: 'Especia' },
-            nutty: { en: 'Nutty', es: 'Nuez' },
-            caramel: { en: 'Caramel', es: 'Caramelo' },
-            sweetness: { en: 'Sweetness', es: 'Dulzor' },
-            defects: { en: 'Defects', es: 'Defectos' },
+          const getAttrLabel = (id: string, lang: 'en' | 'es') => {
+            const attr = currentConfig.attributes.find(a => a.id === id);
+            if (attr) return lang === 'es' ? attr.nameEs : attr.nameEn;
+            return id;
           };
 
           // Dominant Aftertaste
           if (analysis.dominantAftertaste) {
-            const domLabel = attrLabels[analysis.dominantAftertaste]?.[isEs ? 'es' : 'en'] || analysis.dominantAftertaste;
+            const domLabel = getAttrLabel(analysis.dominantAftertaste, isEs ? 'es' : 'en');
             const title = t(`Dominant Aftertaste (${analysis.aftertastePercent}%)`, `Post-gusto Dominante (${analysis.aftertastePercent}%)`);
             addTextSection(title, domLabel);
           }
@@ -557,7 +531,7 @@ export const generatePdf = async (sessionsInput: GradingSession | GradingSession
           if (analysis.aftertasteBoosts && analysis.aftertasteBoosts.length > 0) {
             const boostText = analysis.aftertasteBoosts
               .map(b => {
-                const label = attrLabels[b.attrId]?.[isEs ? 'es' : 'en'] || b.attrId;
+                const label = getAttrLabel(b.attrId, isEs ? 'es' : 'en');
                 return `${label} +${b.amount}`;
               })
               .join(', ');

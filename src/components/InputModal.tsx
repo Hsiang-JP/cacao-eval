@@ -45,12 +45,12 @@ const InputModal: React.FC<InputModalProps> = ({
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-100 animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="p-4 flex items-center justify-between bg-cacao-50">
+                <div className="p-4 flex items-center justify-between bg-brand-50">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-cacao-100 text-cacao-600">
+                        <div className="p-2 rounded-full bg-brand-100 text-brand-600">
                             <PenTool size={20} />
                         </div>
-                        <h3 className="font-bold text-lg text-cacao-900">
+                        <h3 className="font-bold text-lg text-brand-900">
                             {title || (language === 'es' ? 'Ingresar Dato' : 'Enter Data')}
                         </h3>
                     </div>
@@ -72,7 +72,7 @@ const InputModal: React.FC<InputModalProps> = ({
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
                             placeholder={placeholder}
-                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cacao-500 focus:bg-white transition-all font-medium"
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-medium"
                             autoFocus
                         />
                     </form>
@@ -89,7 +89,7 @@ const InputModal: React.FC<InputModalProps> = ({
                     <button
                         onClick={() => handleSubmit()}
                         disabled={!value.trim()}
-                        className="px-6 py-2.5 bg-cacao-600 hover:bg-cacao-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors shadow-sm"
+                        className="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors shadow-sm"
                     >
                         {confirmLabel || (language === 'es' ? 'Aceptar' : 'OK')}
                     </button>

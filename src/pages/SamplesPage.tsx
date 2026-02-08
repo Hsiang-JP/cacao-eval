@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { dbService, StoredSample } from '../services/dbService';
 import { getDateStringForFilename } from '../utils/dateUtils';
 
-import { TRANSLATIONS } from '../constants';
 import { Search, Trash2, Calendar, User, FileText, CheckSquare, Square, BarChart2, Upload, Download, Plus } from 'lucide-react';
 import SampleLibraryCard from '../components/samples/SampleLibraryCard';
 import Papa from 'papaparse';
@@ -301,7 +300,7 @@ const SamplesPage: React.FC = () => {
             <main className="w-full px-4 md:px-8 space-y-6 mb-8 flex-grow">
 
                 {/* Actions Bar */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-cacao-100 flex flex-col gap-4">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-brand-100 flex flex-col gap-4">
 
                     {/* Responsive Layout: Search stacks on mobile, side-by-side on desktop */}
                     <div className="flex flex-col lg:flex-row justify-between gap-4">
@@ -309,10 +308,10 @@ const SamplesPage: React.FC = () => {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 type="text"
-                                placeholder={t.searchSamples || "Search samples..."}
+                                placeholder={t('searchSamples') || "Search samples..."}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cacao-500 focus:bg-white transition-all"
+                                className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
                             />
                             {/* Help Tooltip */}
                             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 group">
@@ -336,16 +335,16 @@ const SamplesPage: React.FC = () => {
                             <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
                                 <button
                                     onClick={handleImportClick}
-                                    className="p-2 text-cacao-700 hover:bg-white hover:text-cacao-900 hover:shadow-sm rounded-md transition-all"
-                                    title={t.importSamples}
+                                    className="p-2 text-brand-700 hover:bg-white hover:text-brand-900 hover:shadow-sm rounded-md transition-all"
+                                    title={t('importSamples')}
                                 >
                                     <Upload size={20} />
                                 </button>
                                 <div className="w-px h-6 bg-gray-200"></div>
                                 <button
                                     onClick={handleExport}
-                                    className="p-2 text-cacao-700 hover:bg-white hover:text-cacao-900 hover:shadow-sm rounded-md transition-all"
-                                    title={t.exportAllCSV}
+                                    className="p-2 text-brand-700 hover:bg-white hover:text-brand-900 hover:shadow-sm rounded-md transition-all"
+                                    title={t('exportAllCSV')}
                                 >
                                     <Download size={20} />
                                 </button>
@@ -358,7 +357,7 @@ const SamplesPage: React.FC = () => {
                                     onClick={() => setSelectedIds(new Set())}
                                     disabled={selectedIds.size === 0}
                                     className={`px-3 py-2.5 rounded-xl border text-sm font-bold flex items-center gap-2 transition-all duration-200 ${selectedIds.size > 0
-                                        ? 'bg-cacao-100 text-cacao-900 border-cacao-200 hover:bg-cacao-200 hover:border-cacao-300 cursor-pointer shadow-sm'
+                                        ? 'bg-brand-100 text-brand-900 border-brand-200 hover:bg-brand-200 hover:border-brand-300 cursor-pointer shadow-sm'
                                         : 'bg-gray-50 text-gray-400 border-gray-100 cursor-default opacity-60'
                                         }`}
                                     title="Clear Selection"
@@ -402,17 +401,17 @@ const SamplesPage: React.FC = () => {
                                     disabled={selectedIds.size < 2}
                                     className={`font-bold py-2.5 px-5 rounded-xl shadow-md transition-colors ${selectedIds.size < 2
                                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                        : 'bg-white text-cacao-800 border-2 border-cacao-800 hover:bg-cacao-50'
+                                        : 'bg-white text-brand-800 border-2 border-brand-800 hover:bg-brand-50'
                                         }`}
                                 >
-                                    {t.compare || "Compare"}
+                                    {t('compare') || "Compare"}
                                 </button>
 
                                 {/* New Evaluation - Compact Button */}
                                 <button
                                     onClick={() => navigate('/evaluate')}
-                                    className="bg-cacao-600 hover:bg-cacao-700 text-white font-bold p-2.5 rounded-xl shadow-md transition-colors flex items-center justify-center aspect-square"
-                                    title={t.newEvaluation}
+                                    className="bg-brand-600 hover:bg-brand-700 text-white font-bold p-2.5 rounded-xl shadow-md transition-colors flex items-center justify-center aspect-square"
+                                    title={t('newEvaluation')}
                                 >
                                     <Plus size={24} />
                                 </button>
@@ -427,12 +426,12 @@ const SamplesPage: React.FC = () => {
                         <div className="text-center py-20 text-gray-500">Loading samples...</div>
                     ) : filteredSamples.length === 0 ? (
                         <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-                            <p className="text-gray-500 mb-4">{t.noSamples || "No samples found"}</p>
+                            <p className="text-gray-500 mb-4">{t('noSamples') || "No samples found"}</p>
                             <button
                                 onClick={() => navigate('/evaluate')}
-                                className="text-cacao-600 font-bold hover:underline"
+                                className="text-brand-600 font-bold hover:underline"
                             >
-                                Start your first evaluation
+                                {t('startFirstEvaluation')}
                             </button>
                         </div>
                     ) : (

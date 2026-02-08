@@ -1,40 +1,11 @@
-import { GradingSession } from '../types';
+import { GradingSession, StoredSample } from '../types';
 
 // Database configuration
 const DB_NAME = 'CoExEvaluations';
 const DB_VERSION = 1;
 const STORE_NAME = 'samples';
 
-// Extended interface for stored samples
-export interface StoredSample {
-    // Primary Key
-    id: string; // UUID
 
-    // Metadata
-    sampleCode: string;
-    date: string; // ISO format (YYYY-MM-DD)
-    time: string;
-    evaluator: string;
-    evaluationType: 'cacao_mass' | 'chocolate';
-    sampleInfo: string;
-    notes: string;
-    producerRecommendations: string;
-
-    // Scores
-    attributes: GradingSession['attributes'];
-    globalQuality: number;
-    selectedQualityId?: string;
-
-    // TDS Profile (optional)
-    tdsProfile?: GradingSession['tdsProfile'];
-
-    // Timestamps
-    createdAt: number; // Unix timestamp
-    updatedAt: number; // Unix timestamp
-
-    // UI State
-    language: 'en' | 'es';
-}
 
 class CoExDB {
     private db: IDBDatabase | null = null;
@@ -337,13 +308,35 @@ class CoExDB {
      * Search samples by sample code (partial match)
      */
     async searchBySampleCode(code: string): Promise<StoredSample[]> {
-        // TODO: Optimize for large datasets - currently scans all items. 
-        // Consider keeping a separate index or using a cursor with a range if possible (though partial match is hard in IDB).
-        const allSamples = await this.getAllSamples();
+        const db = await this.init();
         const searchTerm = code.toLowerCase();
-        return allSamples.filter((sample) =>
-            sample.sampleCode.toLowerCase().includes(searchTerm)
-        );
+
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const index = store.index('sampleCode'); // Use index for iteration order if desired, or just store
+
+            // We still have to scan for partial match
+            const request = index.openCursor();
+            const results: StoredSample[] = [];
+
+            request.onsuccess = (event) => {
+                const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+                if (cursor) {
+                    const sample = cursor.value;
+                    if (sample.sampleCode.toLowerCase().includes(searchTerm)) {
+                        results.push(sample);
+                    }
+                    cursor.continue();
+                } else {
+                    resolve(results);
+                }
+            };
+
+            request.onerror = () => {
+                reject(new Error(`Failed to search samples: ${request.error?.message}`));
+            };
+        });
     }
 
     /**

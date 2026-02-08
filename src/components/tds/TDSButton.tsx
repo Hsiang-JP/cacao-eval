@@ -75,9 +75,10 @@ const TDSButton: React.FC<TDSButtonProps> = ({
     const baseClasses = `
     relative flex items-center justify-center
     w-full h-full
-    px-4 py-3 rounded-xl font-bold text-sm uppercase tracking-wide
+    px-2 py-1 rounded-xl font-bold text-xs uppercase tracking-wide leading-tight
     transition-all duration-150 select-none
     touch-manipulation
+    whitespace-normal text-center break-words
   `;
 
     const activeClasses = isActive

@@ -31,12 +31,12 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-100 animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="p-4 flex items-center justify-between bg-cacao-50">
+                <div className="p-4 flex items-center justify-between bg-brand-50">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-cacao-100 text-cacao-600">
+                        <div className="p-2 rounded-full bg-brand-100 text-brand-600">
                             <HelpCircle size={24} />
                         </div>
-                        <h3 className="font-bold text-lg text-cacao-900">
+                        <h3 className="font-bold text-lg text-brand-900">
                             {title || (language === 'es' ? 'Confirmar' : 'Confirm')}
                         </h3>
                     </div>
@@ -68,7 +68,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                         }}
                         className={`px-6 py-2.5 font-bold rounded-xl text-white transition-colors shadow-sm ${isDangerous
                                 ? 'bg-red-600 hover:bg-red-700'
-                                : 'bg-cacao-600 hover:bg-cacao-700'
+                                : 'bg-brand-600 hover:bg-brand-700'
                             }`}
                     >
                         {confirmLabel || (language === 'es' ? 'Confirmar' : 'Confirm')}

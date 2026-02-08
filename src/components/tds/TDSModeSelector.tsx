@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLanguage } from '../../context/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { TDSMode } from '../../types';
 
 interface TDSModeSelectorProps {
@@ -8,24 +8,24 @@ interface TDSModeSelectorProps {
 }
 
 const TDSModeSelector: React.FC<TDSModeSelectorProps> = ({ onSelect, onCancel }) => {
-    const { language } = useLanguage();
+    const { t } = useTranslation();
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4">
-                <h3 className="text-xl font-bold text-cacao-800 mb-4">
-                    {language === 'es' ? 'Seleccionar Modo TDS' : 'Select TDS Mode'}
+                <h3 className="text-xl font-bold text-brand-800 mb-4">
+                    {t('tds.selectMode')}
                 </h3>
                 <div className="space-y-3">
                     <button
                         onClick={() => onSelect('normal')}
-                        className="w-full bg-cacao-50 hover:bg-cacao-100 border-2 border-cacao-200 rounded-xl p-4 text-left transition-colors"
+                        className="w-full bg-brand-50 hover:bg-brand-100 border-2 border-brand-200 rounded-xl p-4 text-left transition-colors"
                     >
-                        <div className="font-bold text-cacao-800">
-                            {language === 'es' ? 'Normal (5 atributos)' : 'Normal (5 attributes)'}
+                        <div className="font-bold text-brand-800">
+                            {t('tds.normalMode')}
                         </div>
                         <div className="text-sm text-gray-600">
-                            {language === 'es' ? 'Cacao, Acidez, Amargo, Astringencia, Tostado' : 'Cacao, Acidity, Bitter, Astringency, Roast'}
+                            {t('tds.normalDesc')}
                         </div>
                     </button>
                     <button
@@ -33,10 +33,10 @@ const TDSModeSelector: React.FC<TDSModeSelectorProps> = ({ onSelect, onCancel })
                         className="w-full bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl p-4 text-left transition-colors"
                     >
                         <div className="font-bold text-amber-800">
-                            {language === 'es' ? 'Experto (15 atributos)' : 'Expert (15 attributes)'}
+                            {t('tds.expertMode')}
                         </div>
                         <div className="text-sm text-gray-600">
-                            {language === 'es' ? 'Todos los atributos de sabor' : 'All flavor attributes'}
+                            {t('tds.expertDesc')}
                         </div>
                     </button>
                 </div>
@@ -44,7 +44,7 @@ const TDSModeSelector: React.FC<TDSModeSelectorProps> = ({ onSelect, onCancel })
                     onClick={onCancel}
                     className="mt-4 w-full text-gray-500 hover:text-gray-700 py-2"
                 >
-                    {language === 'es' ? 'Cancelar' : 'Cancel'}
+                    {t('tds.cancel')}
                 </button>
             </div>
         </div>

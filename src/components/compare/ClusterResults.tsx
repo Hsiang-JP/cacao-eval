@@ -129,10 +129,10 @@ export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessio
             {clusters.map((cluster) => (
                 <div key={cluster.id} className="bg-white rounded-xl shadow-sm border border-gray-100">
                     {/* Header */}
-                    <div className="bg-cacao-50/50 p-4 border-b border-gray-100 flex items-center justify-between">
+                    <div className="bg-brand-50/50 p-4 border-b border-gray-100 flex items-center justify-between">
                         <div>
-                            <h3 className="font-bold text-cacao-900 text-lg flex items-center gap-2">
-                                <span className="bg-cacao-100 text-cacao-800 text-xs px-2 py-1 rounded-full">#{cluster.id}</span>
+                            <h3 className="font-bold text-brand-900 text-lg flex items-center gap-2">
+                                <span className="bg-brand-100 text-brand-800 text-xs px-2 py-1 rounded-full">#{cluster.id}</span>
                                 {getClusterName(cluster)}
                             </h3>
                             <p className="text-xs text-gray-500 mt-1">
@@ -142,8 +142,8 @@ export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessio
                             </p>
                         </div>
                         <div className="text-right">
-                            <div className="flex items-center gap-1 text-cacao-700 font-bold">
-                                <Star size={16} className="fill-cacao-500 text-cacao-500" />
+                            <div className="flex items-center gap-1 text-brand-700 font-bold">
+                                <Star size={16} className="fill-brand-500 text-brand-500" />
                                 {cluster.avgQuality}
                             </div>
                             <span className="text-[10px] text-gray-400 uppercase tracking-wide">{t("Avg Quality", "Calidad Prom.")}</span>
@@ -156,7 +156,7 @@ export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessio
                             <Users size={14} />
                             <span>{cluster.sampleCodes.length} {t("Samples in this group", "Muestras en este grupo")}</span>
                             {isTouchDevice && (
-                                <span className="text-cacao-500 ml-2">({t("Tap to view", "Toque para ver")})</span>
+                                <span className="text-brand-500 ml-2">({t("Tap to view", "Toque para ver")})</span>
                             )}
                         </div>
 
@@ -181,10 +181,10 @@ export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessio
                                         onMouseLeave={handleMouseLeave}
                                         className={`relative`}>
                                         <div className={`text-sm py-2 px-3 rounded border cursor-pointer transition-all text-center truncate ${isActive
-                                            ? 'bg-cacao-100 border-cacao-300 ring-2 ring-cacao-200 text-cacao-900 font-bold'
+                                            ? 'bg-brand-100 border-brand-300 ring-2 ring-brand-200 text-brand-900 font-bold'
                                             : selectedIds.includes(sampleId)
                                                 ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-400 text-blue-900 font-bold shadow-md transform scale-105 z-10'
-                                                : 'bg-gray-50 hover:bg-cacao-50 text-gray-700 hover:text-cacao-900 border-gray-100'
+                                                : 'bg-gray-50 hover:bg-brand-50 text-gray-700 hover:text-brand-900 border-gray-100'
                                             }`}>
                                             {code}
                                         </div>
@@ -209,10 +209,10 @@ export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessio
                     <div className={`w-[384px] max-w-[calc(100vw-32px)] bg-white rounded-lg shadow-xl border border-gray-200 p-4 text-left ${isTouchDevice ? 'pointer-events-auto' : ''}`}>
                         <div className="flex justify-between items-start mb-3 border-b border-gray-100 pb-2">
                             <div className="flex-1 min-w-0 mr-3">
-                                <span className="font-bold text-cacao-900 text-base block mb-0.5">{activeSession.sampleCode}</span>
+                                <span className="font-bold text-brand-900 text-base block mb-0.5">{activeSession.sampleCode}</span>
                                 <div className="flex flex-col gap-0.5">
                                     <div className="flex items-center gap-1.5 text-sm text-gray-700">
-                                        <Users size={14} className="text-cacao-500" />
+                                        <Users size={14} className="text-brand-500" />
                                         <span className="font-medium truncate">{activeSession.evaluator}</span>
                                     </div>
                                     <div className="text-xs text-gray-400 ml-5">
@@ -221,7 +221,7 @@ export const ClusterResults: React.FC<ClusterResultsProps> = ({ clusters, sessio
                                 </div>
                             </div>
                             <div className="flex flex-col items-end gap-1">
-                                <span className="bg-cacao-100 text-cacao-800 text-sm px-2.5 py-1 rounded-full font-bold whitespace-nowrap">
+                                <span className="bg-brand-100 text-brand-800 text-sm px-2.5 py-1 rounded-full font-bold whitespace-nowrap">
                                     Q: {activeSession.globalQuality}
                                 </span>
                                 {isTouchDevice && (

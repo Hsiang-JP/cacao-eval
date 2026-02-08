@@ -44,7 +44,7 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
     };
 
     return (
-        <div className={`bg-white rounded-xl shadow-sm border border-cacao-100 hover:shadow-md transition-shadow relative group/card overflow-hidden h-full flex flex-col w-full ${compact ? 'p-3' : 'p-4'}`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-brand-100 hover:shadow-md transition-shadow relative group/card overflow-hidden h-full flex flex-col w-full ${compact ? 'p-3' : 'p-4'}`}>
 
             {/* Header: Checkbox, Code, Type, Score */}
             <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
@@ -53,10 +53,10 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
                     {selectable && onToggleSelect && (
                         <button
                             onClick={() => onToggleSelect(sample.id)}
-                            className="mt-1 text-gray-400 hover:text-cacao-600 transition-colors flex-shrink-0"
+                            className="mt-1 text-gray-400 hover:text-brand-600 transition-colors flex-shrink-0"
                         >
                             {isSelected ? (
-                                <CheckSquare size={22} className="text-cacao-600" />
+                                <CheckSquare size={22} className="text-brand-600" />
                             ) : (
                                 <Square size={22} />
                             )}
@@ -64,7 +64,7 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
                     )}
                     <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2 flex-wrap">
-                            <h3 className="font-bold text-xl sm:text-2xl text-cacao-900 leading-tight truncate">{sample.sampleCode}</h3>
+                            <h3 className="font-bold text-xl sm:text-2xl text-brand-900 leading-tight truncate">{sample.sampleCode}</h3>
                             <span className="text-gray-500 text-xs sm:text-sm font-medium">
                                 {sample.evaluationType === 'cacao_mass'
                                     ? (language === 'es' ? 'Masa de Cacao' : 'Cacao Mass')
@@ -89,7 +89,7 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
                 {/* Right side: Score + Delete - Fixed width on mobile */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex flex-col items-end min-w-[3rem]">
-                        <span className="text-2xl sm:text-3xl font-mono font-bold text-cacao-800 leading-none">{sample.globalQuality}</span>
+                        <span className="text-2xl sm:text-3xl font-mono font-bold text-brand-800 leading-none">{sample.globalQuality}</span>
                         <span className="text-[9px] sm:text-[10px] uppercase text-gray-400 font-bold mt-0.5">Score</span>
                     </div>
                     {/* Delete Button */}
@@ -125,7 +125,7 @@ const SampleLibraryCard: React.FC<SampleLibraryCardProps> = ({
                 {!hideDetails && (
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="text-left py-1 text-cacao-700 font-bold text-lg hover:text-cacao-900 group"
+                        className="text-left py-1 text-brand-700 font-bold text-lg hover:text-brand-900 group"
                     >
                         <span>{t.viewDetails || "View Details"}</span>
                     </button>

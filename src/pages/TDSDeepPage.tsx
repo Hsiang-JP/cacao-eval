@@ -79,15 +79,15 @@ const TDSDeepPage: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate(-1)}
-                            className="p-2 rounded-full hover:bg-white/50 text-cacao-700 transition-colors"
+                            className="p-2 rounded-full hover:bg-white/50 text-brand-700 transition-colors"
                         >
                             <ArrowLeft size={24} />
                         </button>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-cacao-900 leading-tight">
+                            <h1 className="text-2xl md:text-3xl font-bold text-brand-900 leading-tight">
                                 {language === 'es' ? 'Análisis TDS Profundo' : 'TDS Deep Dive'}
                             </h1>
-                            <p className="text-sm md:text-base text-cacao-600">
+                            <p className="text-sm md:text-base text-brand-600">
                                 {language === 'es'
                                     ? 'Comparación temporal y agregación de muestras'
                                     : 'Temporal comparison and sample aggregation'}
@@ -96,12 +96,12 @@ const TDSDeepPage: React.FC = () => {
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex p-1 bg-cacao-100 rounded-xl overflow-hidden shadow-inner self-start md:self-center">
+                    <div className="flex p-1 bg-brand-100 rounded-xl overflow-hidden shadow-inner self-start md:self-center">
                         <button
                             onClick={() => setActiveTab('single')}
                             className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'single'
-                                ? 'bg-white text-cacao-800 shadow-sm'
-                                : 'text-cacao-600 hover:text-cacao-800 hover:bg-cacao-200/50'
+                                ? 'bg-white text-brand-800 shadow-sm'
+                                : 'text-brand-600 hover:text-brand-800 hover:bg-brand-200/50'
                                 }`}
                         >
                             {language === 'es' ? 'Único' : 'Single'}
@@ -109,8 +109,8 @@ const TDSDeepPage: React.FC = () => {
                         <button
                             onClick={() => setActiveTab('multiple')}
                             className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'multiple'
-                                ? 'bg-white text-cacao-800 shadow-sm'
-                                : 'text-cacao-600 hover:text-cacao-800 hover:bg-cacao-200/50'
+                                ? 'bg-white text-brand-800 shadow-sm'
+                                : 'text-brand-600 hover:text-brand-800 hover:bg-brand-200/50'
                                 }`}
                         >
                             {language === 'es' ? 'Múltiple' : 'Multiple'}
@@ -212,7 +212,7 @@ const SingleViewHandler: React.FC<{ samples: StoredSample[], activeAttributeIds:
                         <select
                             value={selectedId}
                             onChange={(e) => setSelectedId(e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-200 text-cacao-900 text-sm rounded-lg focus:ring-cacao-500 focus:border-cacao-500 block p-2.5 font-medium appearance-none pr-8"
+                            className="w-full bg-gray-50 border border-gray-200 text-brand-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5 font-medium appearance-none pr-8"
                         >
                             {samples.map(s => (
                                 <option key={s.id} value={s.id}>

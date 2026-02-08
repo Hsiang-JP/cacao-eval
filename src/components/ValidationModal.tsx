@@ -55,7 +55,7 @@ const ValidationModal: React.FC<ValidationModalProps> = ({
                         <ul className="space-y-2 bg-gray-50 p-4 rounded-lg border border-gray-100">
                             {items.map((item, idx) => (
                                 <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                                    <span className="mt-1.5 w-1.5 h-1.5 bg-cacao-500 rounded-full flex-shrink-0" />
+                                    <span className="mt-1.5 w-1.5 h-1.5 bg-brand-500 rounded-full flex-shrink-0" />
                                     <span>{item.replace(/^- /, '')}</span>
                                 </li>
                             ))}

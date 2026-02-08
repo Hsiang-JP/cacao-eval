@@ -1,3 +1,4 @@
+// Tailwind config for CoEx
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
@@ -7,7 +8,7 @@ export default {
     theme: {
         extend: {
             colors: {
-                cacao: {
+                brand: {
                     50: '#fdf8f6',
                     100: '#f2e8e5',
                     200: '#eaddd7',

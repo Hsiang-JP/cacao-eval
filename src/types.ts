@@ -15,12 +15,13 @@ export interface FlavorAttribute {
   name: string; // Current display name
   nameEn: string;
   nameEs: string;
-  category: 'basic' | 'aroma' | 'defect' | 'other';
+  category: 'basic' | 'aroma' | 'defect' | 'other' | 'core' | 'complementary';
   score: number; // 0-10
   csvHeaderEn: string;
   csvHeaderEs: string;
   subAttributes?: SubAttribute[];
   isCalculated?: boolean;
+  color?: string;
 }
 
 export interface QualityAttribute {
@@ -74,6 +75,7 @@ export interface TDSScoreResult {
   zoneBreakdown?: {
     attack: number;
     body: number;
+    finish: number;
   };
   originalScore?: number; // Score before boost
   boostDetails?: {
@@ -111,4 +113,23 @@ export interface TDSProfile {
   totalDuration: number; // total profiling time in seconds
   analysis?: TDSAnalysisResult; // Persisted analysis
   lastModified?: number; // For cache invalidation
+}
+
+export interface StoredSample {
+  id: string; // UUID
+  sampleCode: string;
+  sampleInfo: string;
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  evaluator: string;
+  evaluationType: 'cacao_mass' | 'chocolate';
+  attributes: FlavorAttribute[];
+  selectedQualityId?: string; // ID of the quality attribute selected
+  globalQuality: number;
+  notes: string;
+  producerRecommendations: string;
+  language: 'en' | 'es'; // Language used during evaluation
+  tdsProfile?: TDSProfile;
+  createdAt?: number;
+  updatedAt?: number;
 }

@@ -5,7 +5,8 @@ import {
   ArcElement,
   Tooltip,
   Legend,
-  ChartOptions
+  ChartOptions,
+  Chart
 } from 'chart.js';
 import { PolarArea } from 'react-chartjs-2';
 import { FlavorAttribute } from '../types';
@@ -14,6 +15,8 @@ import { FlavorAttribute } from '../types';
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
 import { useLanguage } from '../context/LanguageContext';
+import { currentConfig } from '../constants';
+import { getAttributeColor } from '../utils/colors';
 
 interface FlavorRadarProps {
   attributes: FlavorAttribute[];
@@ -22,96 +25,32 @@ interface FlavorRadarProps {
   className?: string;
 }
 
-const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes, height = '500px', hideTitle = false, className = '' }, ref) => {
+const FlavorRadar = React.memo(forwardRef<Chart<'polarArea'> | null | undefined, FlavorRadarProps>(({ attributes, height = '500px', hideTitle = false, className = '' }, ref) => {
   const { language } = useLanguage();
-  // Order logic matches standard CoEx flow
-  const order = useMemo(() => [
-    'cacao',
-    'acidity',
-    'bitterness',
-    'astringency',
-    'fresh_fruit',
-    'browned_fruit',
-    'vegetal',
-    'floral',
-    'woody',
-    'spice',
-    'nutty',
-    'caramel',
-    'sweetness',
-    'defects',
-    'roast'
-  ], []);
+  // Order logic driven by config
+  const order = useMemo(() => {
+    return currentConfig.meta.radarAttributeIds || currentConfig.attributes.map(a => a.id);
+  }, []);
 
   // ... (label and color logic remains) ...
 
   const getLabel = (id: string, attr: FlavorAttribute | undefined) => {
     let text = '';
+    const configAttr = currentConfig.attributes.find(a => a.id === id);
 
-    if (language === 'es') {
-      switch (id) {
-        case 'roast': text = 'TOSTADO'; break;
-        case 'acidity': text = 'ACIDEZ'; break;
-        case 'fresh_fruit': text = 'FRUTA\nFRESCA'; break;
-        case 'browned_fruit': text = 'FRUTA\nMARRÓN'; break;
-        case 'vegetal': text = 'VEGETAL'; break;
-        case 'floral': text = 'FLORAL'; break;
-        case 'woody': text = 'MADERA'; break;
-        case 'spice': text = 'ESPECIA'; break;
-        case 'nutty': text = 'NUEZ'; break;
-        case 'caramel': text = 'CARAMELO /\nPANELA'; break;
-        case 'sweetness': text = 'DULZOR\n(solo chocolate)'; break;
-        case 'defects': text = 'SABORES\nATÍPICOS'; break;
-        case 'cacao': text = 'CACAO'; break;
-        case 'bitterness': text = 'AMARGOR'; break;
-        case 'astringency': text = 'ASTRINGENCIA'; break;
-        default: text = attr ? attr.nameEs : id;
-      }
+    // Use config label if available, otherwise attribute name, otherwise ID
+    if (configAttr) {
+      text = language === 'es' ? configAttr.nameEs : configAttr.nameEn;
     } else {
-      switch (id) {
-        case 'roast': text = 'ROAST'; break;
-        case 'acidity': text = 'ACIDITY'; break;
-        case 'fresh_fruit': text = 'FRESH\nFRUIT'; break;
-        case 'browned_fruit': text = 'BROWNED\nFRUIT'; break;
-        case 'vegetal': text = 'VEGETAL'; break;
-        case 'floral': text = 'FLORAL'; break;
-        case 'woody': text = 'WOODY'; break;
-        case 'spice': text = 'SPICE'; break;
-        case 'nutty': text = 'NUTTY'; break;
-        case 'caramel': text = 'CARAMEL /\nPANELA'; break;
-        case 'sweetness': text = 'SWEETNESS\n(only chocolate)'; break;
-        case 'defects': text = 'OFF-FLAVOURS'; break;
-        case 'cacao': text = 'CACAO'; break;
-        case 'bitterness': text = 'BITTERNESS'; break;
-        case 'astringency': text = 'ASTRINGENCIA'; break;
-        default: text = attr ? attr.nameEn : id;
-      }
+      text = attr ? (language === 'es' ? attr.nameEs : attr.nameEn) : id;
     }
 
-    // Chart.js accepts arrays for multi-line labels
+    // Handle generic newlines if encoded in string (optional, usually config strings are plain)
+    // If strict wrapping is needed, it can be done here.
     return text.split('\n');
   };
 
-  const getColor = (id: string) => {
-    switch (id) {
-      case 'cacao': return '#754c29';
-      case 'bitterness': return '#a01f65';
-      case 'astringency': return '#366d99';
-      case 'roast': return '#ebab21';
-      case 'acidity': return '#00954c';
-      case 'fresh_fruit': return '#f6d809';
-      case 'browned_fruit': return '#431614';
-      case 'vegetal': return '#006260';
-      case 'floral': return '#8dc63f';
-      case 'woody': return '#a97c50';
-      case 'spice': return '#c33d32';
-      case 'nutty': return '#a0a368';
-      case 'caramel': return '#bd7844';
-      case 'sweetness': return '#ffc6e0';
-      case 'defects': return '#a7a9ac';
-      default: return '#a0785a';
-    }
-  };
+
 
   // Prepare Data using useMemo
   const chartLabels = useMemo(() => order.map(id => {
@@ -124,7 +63,7 @@ const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes, 
     return attr ? attr.score : 0;
   }), [attributes, order]);
 
-  const chartColors = useMemo(() => order.map(id => getColor(id)), [order]);
+  const chartColors = useMemo(() => order.map(id => getAttributeColor(id)), [order]);
 
   const data = useMemo(() => ({
     labels: chartLabels,
@@ -203,9 +142,9 @@ const FlavorRadar = React.memo(forwardRef<any, FlavorRadarProps>(({ attributes, 
   }), []);
 
   return (
-    <div className={`w-full bg-white rounded-xl shadow-sm border border-cacao-100 p-1 flex flex-col ${className}`} style={{ height }}>
+    <div className={`w-full bg-white rounded-xl shadow-sm border border-brand-100 p-1 flex flex-col ${className}`} style={{ height }}>
       {!hideTitle && (
-        <h3 className="text-center font-serif text-cacao-800 text-lg mb-2 flex-none pt-2">
+        <h3 className="text-center font-serif text-brand-800 text-lg mb-2 flex-none pt-2">
           {language === 'es' ? 'Gráfico de Sabor' : 'Flavor Profile'}
         </h3>
       )}

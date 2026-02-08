@@ -134,7 +134,7 @@ const ComparePage: React.FC = () => {
     if (loading) {
         return (
             <div className="w-full flex-grow flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cacao-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
             </div>
         );
     }
@@ -143,7 +143,7 @@ const ComparePage: React.FC = () => {
         return (
             <div className="w-full p-8 text-center flex-grow">
                 <h2 className="text-xl text-gray-600">No samples selected.</h2>
-                <button onClick={handleBack} className="mt-4 text-cacao-600 hover:underline">
+                <button onClick={handleBack} className="mt-4 text-brand-600 hover:underline">
                     Go back to Library
                 </button>
             </div>
@@ -164,7 +164,7 @@ const ComparePage: React.FC = () => {
                             <ArrowLeft size={20} className="text-gray-600" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-cacao-900">
+                            <h1 className="text-2xl font-bold text-brand-900">
                                 {mode === 'simple' ? (language === 'es' ? 'Comparación' : 'Comparison') : (language === 'es' ? 'Análisis de Grupos' : 'Cluster Analysis')}
                             </h1>
                             <p className="text-xs text-gray-500">
@@ -178,14 +178,14 @@ const ComparePage: React.FC = () => {
                         <div className="bg-gray-200 p-1 rounded-lg flex items-center">
                             <button
                                 onClick={() => setMode('simple')}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'simple' ? 'bg-white text-cacao-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'simple' ? 'bg-white text-brand-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 <Activity size={16} className="inline mr-1" />
                                 {language === 'es' ? 'Graficar' : 'Graph'}
                             </button>
                             <button
                                 onClick={() => setMode('advanced')}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'advanced' ? 'bg-white text-cacao-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'advanced' ? 'bg-white text-brand-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 <Layers size={16} className="inline mr-1" />
                                 {language === 'es' ? 'Agrupamiento' : 'Clustering'}
@@ -195,7 +195,7 @@ const ComparePage: React.FC = () => {
                         {/* Export */}
                         <button
                             onClick={handleExportPDF}
-                            className="flex items-center gap-2 px-4 py-2 bg-cacao-600 text-white rounded-lg hover:bg-cacao-700 shadow-sm transition-colors text-sm font-medium"
+                            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 shadow-sm transition-colors text-sm font-medium"
                         >
                             <FileDown size={18} />
                             <span className="hidden sm:inline">PDF</span>
@@ -209,7 +209,7 @@ const ComparePage: React.FC = () => {
                     {/* LEFT COLUMN: Visualization */}
                     <div className="lg:col-span-2 space-y-6">
                         {mode === 'simple' ? (
-                            <div className="bg-white rounded-xl shadow-sm border border-cacao-100 flex flex-col">
+                            <div className="bg-white rounded-xl shadow-sm border border-brand-100 flex flex-col">
                                 <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                                     <h3 className="font-bold text-gray-700">
                                         {language === 'es' ? 'Superposición de Perfiles de Sabor' : 'Flavor Profile Overlay'}
@@ -256,7 +256,7 @@ const ComparePage: React.FC = () => {
                     <div className="space-y-6">
                         {/* Similarity Heatmap */}
                         {distanceData && (
-                            <div className="bg-white rounded-xl shadow-sm border border-cacao-100 overflow-hidden">
+                            <div className="bg-white rounded-xl shadow-sm border border-brand-100 overflow-hidden">
                                 <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                                     <h3 className="font-bold text-gray-700">
                                         {language === 'es' ? 'Matriz de Similitud' : 'Similarity Matrix'}

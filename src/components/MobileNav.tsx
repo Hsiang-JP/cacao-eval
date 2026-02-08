@@ -65,7 +65,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ attributes, language, isEvaluatio
             {/* Floating Action Button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className="bg-cacao-600 hover:bg-cacao-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center"
+                className="bg-brand-600 hover:bg-brand-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center"
                 aria-label="Navigation Menu"
             >
                 <Menu size={24} />
@@ -82,8 +82,8 @@ const MobileNav: React.FC<MobileNavProps> = ({ attributes, language, isEvaluatio
 
                     {/* Menu Content */}
                     <div className="relative bg-white rounded-t-2xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300">
-                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-cacao-50">
-                            <h3 className="font-bold text-cacao-800">
+                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-brand-50">
+                            <h3 className="font-bold text-brand-800">
                                 {language === 'es' ? 'Navegación Rápida' : 'Quick Navigation'}
                             </h3>
                             <button
@@ -109,7 +109,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ attributes, language, isEvaluatio
                                     <button
                                         key={attr.id}
                                         onClick={() => scrollToSection(attr.id)}
-                                        className="p-3 text-left rounded-lg hover:bg-cacao-50 border border-transparent hover:border-cacao-100 transition-colors text-sm text-gray-700 font-medium truncate"
+                                        className="p-3 text-left rounded-lg hover:bg-brand-50 border border-transparent hover:border-brand-100 transition-colors text-sm text-gray-700 font-medium truncate"
                                     >
                                         {language === 'es' ? attr.nameEs : attr.nameEn}
                                     </button>

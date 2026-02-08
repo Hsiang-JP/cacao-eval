@@ -20,9 +20,9 @@ import Layout from './components/Layout';
 
 const App: React.FC = () => {
   return (
-    <LanguageProvider>
-      <Router>
-        <Suspense fallback={<LoadingFallback />}>
+    <Suspense fallback={<LoadingFallback />}>
+      <LanguageProvider>
+        <Router>
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<Navigate to="/evaluate" replace />} />
@@ -34,9 +34,9 @@ const App: React.FC = () => {
               <Route path="/tds-deep" element={<TDSDeepPage />} />
             </Route>
           </Routes>
-        </Suspense>
-      </Router>
-    </LanguageProvider>
+        </Router>
+      </LanguageProvider>
+    </Suspense>
   );
 };
 

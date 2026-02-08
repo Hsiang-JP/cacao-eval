@@ -10,7 +10,7 @@ const Layout: React.FC = () => {
     const isMinimalFooter = location.pathname === '/references';
 
     return (
-        <div className="flex flex-col min-h-screen bg-cacao-50 text-gray-800 font-sans">
+        <div className="flex flex-col min-h-screen bg-brand-50 text-gray-800 font-sans">
             <Header />
             <main className="flex-grow w-full">
                 <Outlet />

@@ -8,7 +8,8 @@ import {
 } from '../types';
 import {
     INITIAL_ATTRIBUTES,
-    INITIAL_QUALITY_ATTRIBUTES
+    INITIAL_QUALITY_ATTRIBUTES,
+    currentConfig
 } from '../constants';
 import { dbService, StoredSample } from '../services/dbService';
 import { getCurrentISODate, getCurrentTime } from '../utils/dateUtils';
@@ -81,38 +82,7 @@ export const useGradingSession = (sampleId: string | null) => {
     }, [sampleId, language]);
 
     // Logic Helpers
-    const calculateAttributeScore = (id: string, subAttributes: SubAttribute[]): number => {
-        const scores = subAttributes.map(s => s.score);
-        const sorted = [...scores].sort((a, b) => b - a); // Descending
-        const getVal = (k: number) => sorted[k - 1] || 0; // 1-based index
 
-        let total = 0;
-
-        switch (id) {
-            case 'acidity':
-            case 'defects':
-                total = scores.reduce((a, b) => a + b, 0);
-                break;
-            case 'fresh_fruit':
-                total = getVal(1) + (getVal(2) * 0.75) + ((getVal(3) + getVal(4) + getVal(5)) / 3);
-                break;
-            case 'browned_fruit':
-            case 'woody':
-            case 'spice':
-                total = getVal(1) + (getVal(2) * 0.75) + (getVal(3) / 3);
-                break;
-            case 'vegetal':
-            case 'floral':
-            case 'nutty':
-                total = getVal(1) + (getVal(2) * 0.75);
-                break;
-            default:
-                total = 0;
-        }
-
-        const cappedTotal = Math.min(total, 10);
-        return Math.round((cappedTotal + Number.EPSILON) * 10) / 10;
-    };
 
     // Handlers
     const handleMetadataChange = (field: keyof SampleMetadata, value: string) => {
@@ -144,7 +114,7 @@ export const useGradingSession = (sampleId: string | null) => {
 
                     let newScore = attr.score;
                     if (attr.isCalculated) {
-                        newScore = calculateAttributeScore(attr.id, newSubs);
+                        newScore = currentConfig.scoring.calculateAttributeScore(attr.id, newSubs);
                     }
 
                     return { ...attr, score: newScore, subAttributes: newSubs };
@@ -193,7 +163,7 @@ export const useGradingSession = (sampleId: string | null) => {
         // If we pass window.confirm, it returns true/false immediately.
         // If we pass async modal, it awaits.
 
-        const proceed = await Promise.resolve(confirmFn(t.confirmReset));
+        const proceed = await Promise.resolve(confirmFn(t('confirmReset')));
 
         if (proceed) {
             setSession({
@@ -225,15 +195,12 @@ export const useGradingSession = (sampleId: string | null) => {
                 if (!evaluatorName) missing.push(language === 'es' ? 'Evaluador' : 'Evaluator');
                 if (!date) missing.push(language === 'es' ? 'Fecha' : 'Date');
 
-                setValidationError(language === 'es'
-                    ? `Por favor complete los siguientes campos obligatorios antes de guardar:\n- ${missing.join('\n- ')}`
-                    : `Please complete the following required fields before saving:\n- ${missing.join('\n- ')}`
-                );
+                setValidationError(t('validation.missingFields', { fields: missing.join('\n- ') }));
                 return;
             }
 
             // 1. CHECK REQUIRED SCORES (Warn only)
-            const requiredAttributes = ['cacao', 'bitterness', 'astringency', 'roast', 'acidity'];
+            const requiredAttributes = currentConfig.meta.primaryAttributeIds;
             const missingFields = requiredAttributes.filter(id => {
                 const attr = session.attributes.find(a => a.id === id);
                 return !attr || attr.score <= 0;
@@ -245,19 +212,13 @@ export const useGradingSession = (sampleId: string | null) => {
                     return language === 'es' ? attr?.nameEs : attr?.nameEn;
                 }).join(', ');
 
-                const confirmSave = await confirmFn(language === 'es'
-                    ? `Los siguientes campos principales tienen valor 0 (Ausente): ${missingNames}.\n\n¿Desea guardar de todos modos?`
-                    : `The following core attributes are set to 0 (Absent): ${missingNames}.\n\nDo you want to save anyway?`
-                );
+                const confirmSave = await confirmFn(t('validation.zeroAttributes', { attributes: missingNames }));
                 if (!confirmSave) return;
             }
 
             // Check Global Quality (Warn only)
             if (session.globalQuality <= 0) {
-                const confirmGlobal = await confirmFn(language === 'es'
-                    ? 'La Calidad Global es 0. ¿Desea guardar de todos modos?'
-                    : 'Global Quality score is 0. Do you want to save anyway?'
-                );
+                const confirmGlobal = await confirmFn(t('validation.zeroGlobalQuality'));
                 if (!confirmGlobal) return;
             }
 
@@ -275,11 +236,11 @@ export const useGradingSession = (sampleId: string | null) => {
                 if (sampleId && collision.id === sampleId) {
                     finalId = sampleId;
                 } else {
-                    const confirmOverwrite = await confirmFn(
-                        language === 'es'
-                            ? `Ya existe una muestra con código "${code}", evaluador "${evaluatorName}" y fecha "${date}". ¿Desea sobrescribirla?`
-                            : `A sample with code "${code}", evaluator "${evaluatorName}", and date "${date}" already exists. Do you want to overwrite it?`
-                    );
+                    const confirmOverwrite = await confirmFn(t('validation.overwriteSample', {
+                        code,
+                        evaluator: evaluatorName,
+                        date
+                    }));
                     if (!confirmOverwrite) return;
                     finalId = collision.id;
                 }
@@ -322,10 +283,7 @@ export const useGradingSession = (sampleId: string | null) => {
 
         } catch (error) {
             console.error('Failed to save sample:', error);
-            setValidationError(language === 'es'
-                ? `❌ Error al guardar la muestra: ${error}`
-                : `❌ Failed to save sample: ${error}`
-            );
+            setValidationError(t('validation.saveFailed', { error }));
         }
     };
 

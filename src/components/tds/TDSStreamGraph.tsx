@@ -11,7 +11,8 @@ import {
 } from 'recharts';
 import { useAnalysisResults } from '../../features/tds/hooks/useAnalysisResults';
 import { SENSORY_PALETTE } from '../../shared/theme/sensory-theme';
-import { useLanguage } from '../../context/LanguageContext';
+import { useTranslation } from 'react-i18next';
+import { useDataTranslation } from '../../hooks/useDataTranslation';
 import { ATTRIBUTE_LABELS } from '../../data/attributes';
 import { TDSProfile } from '../../types';
 
@@ -21,7 +22,8 @@ interface TDSStreamGraphProps {
 }
 
 const TDSStreamGraph: React.FC<TDSStreamGraphProps> = ({ profile, allAttributeIds }) => {
-    const { language } = useLanguage();
+    const { t } = useTranslation();
+    const { translateData } = useDataTranslation();
 
     // Use "Compute-Once" hook instead of Real-Time "useRelativeDominance"
     const { streamData, loading } = useAnalysisResults(profile);
@@ -47,8 +49,8 @@ const TDSStreamGraph: React.FC<TDSStreamGraphProps> = ({ profile, allAttributeId
     if (loading && (!streamData || streamData.length === 0)) {
         return (
             <div className="w-full h-[400px] bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-center">
-                <span className="text-cacao-500 animate-pulse font-medium">
-                    {language === 'es' ? 'Analizando datos...' : 'Analyzing data...'}
+                <span className="text-brand-500 animate-pulse font-medium">
+                    {t('tds.analyzing')}
                 </span>
             </div>
         );
@@ -57,7 +59,7 @@ const TDSStreamGraph: React.FC<TDSStreamGraphProps> = ({ profile, allAttributeId
     return (
         <div className="w-full h-[400px] bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col">
             <h3 className="text-lg font-bold text-center mb-2 text-gray-700">
-                {language === 'es' ? 'Evolución de Intensidad Relativa' : 'Relative Intensity Evolution'}
+                {t('tds.relativeIntensity')}
             </h3>
 
             <ResponsiveContainer width="100%" height="100%">
@@ -102,7 +104,7 @@ const TDSStreamGraph: React.FC<TDSStreamGraphProps> = ({ profile, allAttributeId
                                                                 style={{ backgroundColor: item.color }}
                                                             />
                                                             <span className="text-gray-600">
-                                                                {ATTRIBUTE_LABELS[item.name]?.[language] || item.name}
+                                                                {translateData(ATTRIBUTE_LABELS[item.name]) || item.name}
                                                             </span>
                                                         </span>
                                                         <span className="font-bold">{val.toFixed(0)}%</span>
@@ -142,7 +144,7 @@ const TDSStreamGraph: React.FC<TDSStreamGraphProps> = ({ profile, allAttributeId
                             stroke="#000"
                             strokeDasharray="3 3"
                             label={{
-                                value: language === 'es' ? 'Tragar' : 'Swallow',
+                                value: t('tds.swallowVerb'),
                                 position: 'top',
                                 fill: '#000',
                                 fontSize: 12,
@@ -180,7 +182,7 @@ const TDSStreamGraph: React.FC<TDSStreamGraphProps> = ({ profile, allAttributeId
                                 style={{ backgroundColor: color }}
                             />
                             <span className="text-xs text-gray-600 font-medium whitespace-nowrap">
-                                {ATTRIBUTE_LABELS[attrId]?.[language] || attrId}
+                                {translateData(ATTRIBUTE_LABELS[attrId]) || attrId}
                             </span>
                         </div>
                     );

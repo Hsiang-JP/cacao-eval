@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, ChevronDown, ChevronUp } from 'lucide-react';
 import { SubAttribute } from '../types';
-import { TRANSLATIONS } from '../constants';
+import { useTranslation } from 'react-i18next';
 
 interface ScoreSliderProps {
   id: string;
@@ -27,7 +27,7 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
   onChange,
   onSubAttributeChange,
   onSubAttributeDescriptionChange,
-  colorClass = "accent-cacao-600",
+  colorClass = "accent-brand-600",
   customColor,
   language = 'en',
   isCalculated = false,
@@ -36,15 +36,15 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
 }) => {
   // State for accordion - initialize with defaultExpanded prop
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const { t } = useTranslation();
 
   const hasSubAttributes = subAttributes && subAttributes.length > 0;
-  const t = TRANSLATIONS[language];
 
   const getScoreColor = (score: number) => {
     if (score === 0) return 'text-gray-400';
     if (score < 3) return 'text-gray-500';
-    if (score < 7) return 'text-cacao-600';
-    return 'text-cacao-800 font-bold';
+    if (score < 7) return 'text-brand-600';
+    return 'text-brand-800 font-bold';
   };
 
   const activeSubAttributes = subAttributes?.filter(s => s.score > 0) || [];
@@ -55,24 +55,24 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
 
   // All attributes now use accordion mode
   return (
-    <div id={id} className={`bg-white rounded-xl shadow-sm border border-cacao-100 transition-all overflow-hidden scroll-mt-48 ${disabled ? 'opacity-80 pointer-events-none' : ''}`}>
+    <div id={id} className={`bg-white rounded-xl shadow-sm border border-brand-100 transition-all overflow-hidden scroll-mt-48 ${disabled ? 'opacity-80 pointer-events-none' : ''}`}>
       {/* Accordion Header - Always Visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         disabled={disabled}
         aria-expanded={isExpanded}
         aria-controls={`${uniqueId}-content`}
-        className="w-full p-4 flex justify-between items-center hover:bg-cacao-50 transition-colors active:bg-cacao-100 touch-manipulation min-h-[44px]"
+        className="w-full p-4 flex justify-between items-center hover:bg-brand-50 transition-colors active:bg-brand-100 touch-manipulation min-h-[44px]"
       >
         <div className="flex items-center gap-2 flex-1">
           <span className="text-sm font-bold text-gray-800 uppercase tracking-wide">{label}</span>
           {isCalculated && (
-            <span title={t.calculated} className="flex items-center">
+            <span title={t('calculated')} className="flex items-center">
               <Lock size={12} className="text-gray-400" />
             </span>
           )}
           {hasSubAttributes && selectedCount > 0 && (
-            <span className="text-[10px] font-bold bg-cacao-100 text-cacao-800 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-bold bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded">
               {selectedCount}
             </span>
           )}
@@ -117,18 +117,18 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
 
           {isCalculated && (
             <div className="text-[10px] text-gray-400 italic text-right">
-              {t.calculated}
+              {t('calculated')}
             </div>
           )}
 
           {/* Sub-attributes / Flavor Wheel */}
           {hasSubAttributes && (
-            <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-cacao-50 rounded-lg border border-cacao-100 touch-pan-y">
+            <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-brand-50 rounded-lg border border-brand-100 touch-pan-y">
               {subAttributes.map(sub => (
                 <div key={sub.id} className="flex flex-col gap-1">
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-medium text-gray-600 truncate pr-2">{sub.name}</label>
-                    <span className={`text-xs font-mono w-6 text-right ${sub.score > 0 ? "text-cacao-800 font-bold" : "text-gray-400"}`}>
+                    <span className={`text-xs font-mono w-6 text-right ${sub.score > 0 ? "text-brand-800 font-bold" : "text-gray-400"}`}>
                       {sub.score}
                     </span>
                   </div>
@@ -141,16 +141,16 @@ const ScoreSlider = React.memo<ScoreSliderProps>(({
                     style={sliderStyle}
                     onChange={(e) => onSubAttributeChange(sub.id, parseFloat(e.target.value))}
                     disabled={disabled}
-                    className={`w-full h-1.5 bg-gray-200 rounded-lg appearance-none touch-pan-y ${!disabled ? 'cursor-pointer' : 'cursor-not-allowed'} ${customColor ? '' : 'accent-cacao-500'}`}
+                    className={`w-full h-1.5 bg-gray-200 rounded-lg appearance-none touch-pan-y ${!disabled ? 'cursor-pointer' : 'cursor-not-allowed'} ${customColor ? '' : 'accent-brand-500'}`}
                   />
                   {sub.id === 'def_other' && (
                     <input
                       type="text"
                       value={sub.description || ''}
                       onChange={(e) => onSubAttributeDescriptionChange && onSubAttributeDescriptionChange(sub.id, e.target.value)}
-                      placeholder={language === 'es' ? "Descripción..." : "Description..."}
+                      placeholder={t('description') || "Description..."}
                       disabled={disabled}
-                      className="w-full mt-1 p-1.5 text-xs border border-cacao-200 rounded focus:border-cacao-500 outline-none disabled:bg-gray-100"
+                      className="w-full mt-1 p-1.5 text-xs border border-brand-200 rounded focus:border-brand-500 outline-none disabled:bg-gray-100"
                     />
                   )}
                 </div>

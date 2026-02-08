@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ExternalLink, ChevronDown, ChevronRight, Languages } from 'lucide-react';
 import glossaryData from '../data/glossary.json';
+import { currentConfig } from '../constants';
 
 import { useLanguage } from '../context/LanguageContext';
 
@@ -42,7 +43,7 @@ const GuidelinesModal: React.FC<GuidelinesModalProps> = ({
         tabTds: { en: "TDS Profiling", es: "Perfilado TDS" }
     };
 
-    const FLAVOR_WHEEL_URL = language === 'es' ? "flavor_wheel_es.png" : "flavor_wheel_en.png";
+    const FLAVOR_WHEEL_URL = currentConfig.assets.flavorWheel[language];
 
     // Helper to get text based on language
     const gl = (obj: any) => obj?.[language] || obj?.['en'] || '';

@@ -63,27 +63,27 @@ const ReferencesPage: React.FC = () => {
 
 
             <main className="w-full max-w-4xl mx-auto px-4 md:px-8 py-12 flex-grow space-y-12">
-                <h1 className="text-3xl font-bold text-cacao-900 border-b border-cacao-200 pb-4">
+                <h1 className="text-3xl font-bold text-brand-900 border-b border-brand-200 pb-4">
                     {content.title[language]}
                 </h1>
 
                 {/* Author Section */}
                 <section className="space-y-4">
-                    <h2 className="text-xl font-bold text-cacao-800 flex items-center gap-2">
-                        <User className="text-cacao-600" />
+                    <h2 className="text-xl font-bold text-brand-800 flex items-center gap-2">
+                        <User className="text-brand-600" />
                         {content.authorTitle[language]}
                     </h2>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-cacao-100 space-y-6">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-brand-100 space-y-6">
                         {/* Bio */}
                         <div>
-                            <p className="text-lg font-medium text-cacao-900">
+                            <p className="text-lg font-medium text-brand-900">
                                 {content.authorBio[language]}
                             </p>
                         </div>
 
                         {/* Background */}
                         <div className="space-y-2">
-                            <h3 className="font-bold text-cacao-800 text-md uppercase tracking-wide text-sm">
+                            <h3 className="font-bold text-brand-800 text-md uppercase tracking-wide text-sm">
                                 {content.backgroundTitle[language]}
                             </h3>
                             <p className="text-gray-700 leading-relaxed">
@@ -93,7 +93,7 @@ const ReferencesPage: React.FC = () => {
 
                         {/* Future Work */}
                         <div className="space-y-2">
-                            <h3 className="font-bold text-cacao-800 text-md uppercase tracking-wide text-sm">
+                            <h3 className="font-bold text-brand-800 text-md uppercase tracking-wide text-sm">
                                 {content.futureWorkTitle[language]}
                             </h3>
                             <p className="text-gray-700 leading-relaxed">
@@ -108,8 +108,8 @@ const ReferencesPage: React.FC = () => {
 
                 {/* Resources Section */}
                 <section className="space-y-4">
-                    <h2 className="text-xl font-bold text-cacao-800 flex items-center gap-2">
-                        <ExternalLink className="text-cacao-600" />
+                    <h2 className="text-xl font-bold text-brand-800 flex items-center gap-2">
+                        <ExternalLink className="text-brand-600" />
                         {content.resourcesTitle[language]}
                     </h2>
                     <div className="grid gap-4">
@@ -117,13 +117,13 @@ const ReferencesPage: React.FC = () => {
                             href="https://www.cacaoofexcellence.org/info-resources"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-white p-6 rounded-xl shadow-sm border border-cacao-100 hover:shadow-md transition-shadow flex items-start gap-4 group"
+                            className="bg-white p-6 rounded-xl shadow-sm border border-brand-100 hover:shadow-md transition-shadow flex items-start gap-4 group"
                         >
-                            <div className="bg-cacao-100 p-3 rounded-full group-hover:bg-cacao-200 transition-colors">
-                                <FileText className="text-cacao-700" size={24} />
+                            <div className="bg-brand-100 p-3 rounded-full group-hover:bg-brand-200 transition-colors">
+                                <FileText className="text-brand-700" size={24} />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <h3 className="font-bold text-cacao-900 group-hover:text-cacao-700 transition-colors">
+                                <h3 className="font-bold text-brand-900 group-hover:text-brand-700 transition-colors">
                                     {content.guideLink[language]}
                                 </h3>
                                 <p className="text-sm text-gray-500 mt-1 break-all">
@@ -136,13 +136,13 @@ const ReferencesPage: React.FC = () => {
                             href="https://www.cacaoofexcellence.org/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-white p-6 rounded-xl shadow-sm border border-cacao-100 hover:shadow-md transition-shadow flex items-start gap-4 group"
+                            className="bg-white p-6 rounded-xl shadow-sm border border-brand-100 hover:shadow-md transition-shadow flex items-start gap-4 group"
                         >
-                            <div className="bg-cacao-100 p-3 rounded-full group-hover:bg-cacao-200 transition-colors">
-                                <ExternalLink className="text-cacao-700" size={24} />
+                            <div className="bg-brand-100 p-3 rounded-full group-hover:bg-brand-200 transition-colors">
+                                <ExternalLink className="text-brand-700" size={24} />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <h3 className="font-bold text-cacao-900 group-hover:text-cacao-700 transition-colors">
+                                <h3 className="font-bold text-brand-900 group-hover:text-brand-700 transition-colors">
                                     {content.websiteLink[language]}
                                 </h3>
                                 <p className="text-sm text-gray-500 mt-1 break-all">
@@ -155,13 +155,13 @@ const ReferencesPage: React.FC = () => {
 
                 {/* Publications Section */}
                 <section className="space-y-4">
-                    <h2 className="text-xl font-bold text-cacao-800 flex items-center gap-2">
-                        <FileText className="text-cacao-600" />
+                    <h2 className="text-xl font-bold text-brand-800 flex items-center gap-2">
+                        <FileText className="text-brand-600" />
                         {content.publicationsTitle[language]}
                     </h2>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-cacao-100 space-y-6">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-brand-100 space-y-6">
                         <div className="space-y-2">
-                            <p className="text-cacao-900 font-medium">
+                            <p className="text-brand-900 font-medium">
                                 Labbe, D., Schlich, P., Pineau, N., Gilbert, F., & Martin, N. (2009).
                             </p>
                             <p className="text-gray-700 italic">
@@ -176,7 +176,7 @@ const ReferencesPage: React.FC = () => {
                         </div>
 
                         <div className="border-t border-gray-100 pt-6 space-y-2">
-                            <p className="text-cacao-900 font-medium">
+                            <p className="text-brand-900 font-medium">
                                 Pineau, N., Cordelle, S., Imbert, A., Rogeaux, M., & Schlich, P. (2009).
                             </p>
                             <p className="text-gray-700 italic">
@@ -191,7 +191,7 @@ const ReferencesPage: React.FC = () => {
                         </div>
 
                         <div className="border-t border-gray-100 pt-6 space-y-2">
-                            <p className="text-cacao-900 font-medium">
+                            <p className="text-brand-900 font-medium">
                                 Januszewska, R. (2018).
                             </p>
                             <p className="text-gray-700 italic">

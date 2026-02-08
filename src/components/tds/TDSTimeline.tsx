@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { TDSProfile } from '../../types';
 import { analyzeTDS } from '../../utils/tdsCalculator';
 import { getAttributeColor } from '../../utils/colors';
-import { useLanguage } from '../../context/LanguageContext';
+import { useTranslation } from 'react-i18next';
+import { useDataTranslation } from '../../hooks/useDataTranslation';
 import { ATTRIBUTE_LABELS } from '../../data/attributes';
 
 interface TDSTimelineProps {
@@ -11,7 +12,8 @@ interface TDSTimelineProps {
 }
 
 const TDSTimeline: React.FC<TDSTimelineProps> = ({ profile, height = "h-14 sm:h-16" }) => {
-    const { language } = useLanguage();
+    const { t } = useTranslation();
+    const { translateData } = useDataTranslation();
     const [selectedEventIdx, setSelectedEventIdx] = useState<number | null>(null);
 
     // Run analysis to get timing details (Attack End, etc)
@@ -23,12 +25,12 @@ const TDSTimeline: React.FC<TDSTimelineProps> = ({ profile, height = "h-14 sm:h-
         <div className="w-full">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
                 <h4 className="text-sm font-bold text-gray-600 uppercase">
-                    {language === 'es' ? 'Línea de Tiempo' : 'Timeline'}
+                    {t('tds.timeline')}
                 </h4>
                 <div className="flex gap-3 text-xs text-gray-500">
-                    <span>{language === 'es' ? 'Duración' : 'Duration'}: {profile.totalDuration.toFixed(1)}s</span>
+                    <span>{t('tds.duration')}: {profile.totalDuration.toFixed(1)}s</span>
                     <span className="hidden sm:inline">|</span>
-                    <span>{language === 'es' ? 'Tragado' : 'Swallow'}: {profile.swallowTime.toFixed(1)}s</span>
+                    <span>{t('tds.swallowVerb')}: {profile.swallowTime.toFixed(1)}s</span>
                 </div>
             </div>
 
@@ -97,7 +99,7 @@ const TDSTimeline: React.FC<TDSTimelineProps> = ({ profile, height = "h-14 sm:h-
                                                     e.stopPropagation();
                                                     setSelectedEventIdx(isSelected ? null : idx);
                                                 }}
-                                                title={`${ATTRIBUTE_LABELS[event.attrId]?.[language] || event.attrId}: ${event.start.toFixed(1)}s - ${event.end.toFixed(1)}s`}
+                                                title={`${translateData(ATTRIBUTE_LABELS[event.attrId]) || event.attrId}: ${event.start.toFixed(1)}s - ${event.end.toFixed(1)}s`}
                                             />
                                         );
                                     })}
@@ -152,14 +154,14 @@ const TDSTimeline: React.FC<TDSTimelineProps> = ({ profile, height = "h-14 sm:h-
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] sm:text-xs text-gray-600 mb-2">
                 <span className="flex items-center gap-1.5">
                     <span className="w-3 border-t-2 border-dashed border-gray-400"></span>
-                    {language === 'es' ? 'Fin del ataque' : 'Attack End'}
+                    {t('tds.attackEnd')}
                 </span>
                 <span className="flex items-center gap-1.5">
                     <span className="w-3 h-1 bg-black"></span>
-                    {language === 'es' ? 'Tragar' : 'Swallow'}
+                    {t('tds.swallowVerb')}
                 </span>
                 <span className="font-medium text-amber-700 ml-auto">
-                    {language === 'es' ? 'Post-gusto' : 'Aftertaste'}: {(profile.totalDuration - profile.swallowTime).toFixed(1)}s
+                    {t('tds.aftertaste')}: {(profile.totalDuration - profile.swallowTime).toFixed(1)}s
                 </span>
             </div>
 
@@ -172,7 +174,7 @@ const TDSTimeline: React.FC<TDSTimelineProps> = ({ profile, height = "h-14 sm:h-
                             style={{ backgroundColor: getAttributeColor(profile.events[selectedEventIdx].attrId) }}
                         />
                         <span className="font-bold text-gray-800 text-xs">
-                            {ATTRIBUTE_LABELS[profile.events[selectedEventIdx].attrId]?.[language] || profile.events[selectedEventIdx].attrId}
+                            {translateData(ATTRIBUTE_LABELS[profile.events[selectedEventIdx].attrId]) || profile.events[selectedEventIdx].attrId}
                         </span>
                         <span className="text-xs text-gray-500">
                             {profile.events[selectedEventIdx].start.toFixed(1)}s – {profile.events[selectedEventIdx].end.toFixed(1)}s
@@ -180,7 +182,7 @@ const TDSTimeline: React.FC<TDSTimelineProps> = ({ profile, height = "h-14 sm:h-
                     </div>
                 ) : (
                     <span className="text-xs text-gray-400 italic">
-                        {language === 'es' ? 'Toca un segmento para ver detalles' : 'Tap a segment to see details'}
+                        {t('tds.tapSegment')}
                     </span>
                 )}
             </div>

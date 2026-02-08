@@ -11,7 +11,7 @@ import ValidationModal from '../components/ValidationModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { GradingSession, SampleMetadata, QualityAttribute, SubAttribute, TDSMode, TDSProfile, TDSScoreResult, TDSAnalysisResult } from '../types';
 // Note: Constants and Calculator imports moved to hooks, but we need INITIAL_ATTRIBUTES for local resets if used
-import { INITIAL_ATTRIBUTES } from '../constants';
+import { INITIAL_ATTRIBUTES, currentConfig } from '../constants';
 import { RefreshCw, CheckCircle, Play, FileText, ChevronDown, ChevronUp, Save, Plus, Activity } from 'lucide-react';
 import { getAttributeColor } from '../utils/colors';
 
@@ -91,8 +91,7 @@ const EvaluatePage: React.FC = () => {
 
   // Helper to identify primary attributes
   const isPrimaryAttribute = (id: string): boolean => {
-    const primaryIds = ['cacao', 'bitterness', 'astringency', 'roast', 'acidity'];
-    return primaryIds.includes(id);
+    return currentConfig.meta.primaryAttributeIds.includes(id);
   };
   /* Removed static import of pdfService and ChartJS */
 
@@ -103,10 +102,10 @@ const EvaluatePage: React.FC = () => {
     <div id="evaluate-content" className="w-full px-4 md:px-8 space-y-8 mb-8 flex-grow">
 
       {/* Top Section: Metadata */}
-      <section className={`bg-white p-6 rounded-xl shadow-sm border border-cacao-100 transition-opacity`}>
+      <section className={`bg-white p-6 rounded-xl shadow-sm border border-brand-100 transition-opacity`}>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.evaluator}</label>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('evaluator')}</label>
             <input
               type="text"
               value={session.metadata.evaluator}
@@ -115,7 +114,7 @@ const EvaluatePage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.date} / {t.time}</label>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('date')} / {t('time')}</label>
             <div className="flex gap-2">
               <div className="relative w-full">
                 <input
@@ -143,7 +142,7 @@ const EvaluatePage: React.FC = () => {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.code}</label>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('code')}</label>
             <input
               type="text"
               value={session.metadata.sampleCode}
@@ -152,20 +151,20 @@ const EvaluatePage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.evaluationType}</label>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('evaluationType')}</label>
             <select
               value={session.metadata.evaluationType}
               onChange={(e) => handleMetadataChange('evaluationType', e.target.value)}
               className="w-full p-2 bg-gray-50 border rounded-md disabled:bg-gray-100"
             >
-              <option value="cacao_mass">{t.cacaoMass}</option>
-              <option value="chocolate">{t.chocolate}</option>
+              <option value="cacao_mass">{t('cacaoMass')}</option>
+              <option value="chocolate">{t('chocolate')}</option>
             </select>
           </div>
         </div>
         <div className="grid grid-cols-1">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.sampleInfoLabel}</label>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('sampleInfoLabel')}</label>
             <input
               type="text"
               value={session.metadata.sampleInfo}
@@ -182,10 +181,10 @@ const EvaluatePage: React.FC = () => {
           <button
             type="button"
             onClick={handleStartEvaluation}
-            className="bg-cacao-600 hover:bg-cacao-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2"
+            className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2"
           >
             <Play size={20} fill="currentColor" />
-            {t.startEvaluation}
+            {t('startEvaluation')}
           </button>
           <button
             type="button"
@@ -206,7 +205,7 @@ const EvaluatePage: React.FC = () => {
 
           {/* Attributes List */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-cacao-700 sticky top-20 bg-cacao-50 py-2 z-10">{t.basicAttributes}</h3>
+            <h3 className="text-lg font-bold text-brand-700 sticky top-20 bg-brand-50 py-2 z-10">{t('basicAttributes')}</h3>
             {session.attributes.map(attr => {
               const isPrimary = isPrimaryAttribute(attr.id);
               return (
@@ -238,18 +237,18 @@ const EvaluatePage: React.FC = () => {
           <div className="lg:sticky lg:top-24 space-y-6">
 
             {/* Global Quality */}
-            <div className={`bg-white rounded-xl shadow-sm border border-cacao-100 transition-all overflow-hidden ${(!isEvaluationStarted) ? 'opacity-80 pointer-events-none' : ''}`}>
+            <div className={`bg-white rounded-xl shadow-sm border border-brand-100 transition-all overflow-hidden ${(!isEvaluationStarted) ? 'opacity-80 pointer-events-none' : ''}`}>
               {/* Accordion Header */}
               <button
                 onClick={() => setIsGlobalQualityExpanded(!isGlobalQualityExpanded)}
                 disabled={!isEvaluationStarted}
                 aria-expanded={isGlobalQualityExpanded}
                 aria-controls="global-quality-content"
-                className="w-full p-4 flex justify-between items-center hover:bg-cacao-50 transition-colors active:bg-cacao-100 touch-manipulation min-h-[44px]"
+                className="w-full p-4 flex justify-between items-center hover:bg-brand-50 transition-colors active:bg-brand-100 touch-manipulation min-h-[44px]"
               >
-                <span className="text-sm font-bold text-cacao-800 uppercase tracking-wide">{t.globalScore}</span>
+                <span className="text-sm font-bold text-brand-800 uppercase tracking-wide">{t('globalScore')}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl font-mono font-bold text-cacao-800 min-w-[3rem] text-right">
+                  <span className="text-2xl font-mono font-bold text-brand-800 min-w-[3rem] text-right">
                     {session.globalQuality}
                   </span>
                   {isGlobalQualityExpanded ? (
@@ -278,19 +277,19 @@ const EvaluatePage: React.FC = () => {
                         value={session.globalQuality}
                         onChange={(e) => setSession(prev => ({ ...prev, globalQuality: parseFloat(e.target.value) }))}
                         disabled={!isEvaluationStarted}
-                        className={`w-full h-8 md:h-4 bg-gray-200 rounded-lg appearance-none accent-cacao-800 touch-pan-y ${(!isEvaluationStarted) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        className={`w-full h-8 md:h-4 bg-gray-200 rounded-lg appearance-none accent-brand-800 touch-pan-y ${(!isEvaluationStarted) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                       />
                     </div>
                   </div>
 
                   {/* Quality Characteristic Selector */}
                   <div>
-                    <h4 className="text-sm font-bold text-gray-700 uppercase mb-2">{t.qualityCharacteristic}</h4>
+                    <h4 className="text-sm font-bold text-gray-700 uppercase mb-2">{t('qualityCharacteristic')}</h4>
                     <select
                       value={session.selectedQualityId || ''}
                       onChange={(e) => handleQualitySelect(e.target.value)}
                       disabled={!isEvaluationStarted}
-                      className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-cacao-500 focus:ring-1 focus:ring-cacao-500 disabled:bg-gray-100 outline-none transition-all"
+                      className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-100 outline-none transition-all"
                     >
                       <option value="">{language === 'es' ? "Seleccionar..." : "Select..."}</option>
                       {qualityAttributes.map(q => (
@@ -305,9 +304,9 @@ const EvaluatePage: React.FC = () => {
             </div>
 
             {/* Notes & Feedback */}
-            <div className={`bg-white p-6 rounded-xl shadow-sm border border-cacao-100 space-y-4 transition-opacity ${(!isEvaluationStarted) ? 'opacity-80 pointer-events-none' : ''}`}>
+            <div className={`bg-white p-6 rounded-xl shadow-sm border border-brand-100 space-y-4 transition-opacity ${(!isEvaluationStarted) ? 'opacity-80 pointer-events-none' : ''}`}>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.flavorNotes}</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('flavorNotes')}</label>
                 <textarea
                   className="w-full p-3 bg-gray-50 border rounded-lg h-24 text-sm disabled:bg-gray-100"
                   value={session.metadata.notes}
@@ -316,7 +315,7 @@ const EvaluatePage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.producerFeedback}</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('producerFeedback')}</label>
                 <textarea
                   className="w-full p-3 bg-gray-50 border rounded-lg h-24 text-sm disabled:bg-gray-100"
                   value={session.metadata.producerRecommendations}
@@ -344,7 +343,7 @@ const EvaluatePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/samples')}
-                  className="w-full bg-white border border-cacao-200 text-cacao-700 font-bold py-3 rounded-xl shadow-sm hover:bg-cacao-50 transition-colors flex justify-center items-center gap-2"
+                  className="w-full bg-white border border-brand-200 text-brand-700 font-bold py-3 rounded-xl shadow-sm hover:bg-brand-50 transition-colors flex justify-center items-center gap-2"
                 >
                   <FileText size={20} />
                   {language === 'es' ? 'Ver Biblioteca' : 'View Library'}
@@ -357,7 +356,7 @@ const EvaluatePage: React.FC = () => {
                 onClick={() => handleReset(requestConfirmation)}
                 className="w-full bg-white border border-gray-300 text-gray-600 font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
               >
-                <RefreshCw size={18} /> {t.reset}
+                <RefreshCw size={18} /> {t('reset')}
               </button>
             </div>
           </div>
@@ -388,8 +387,8 @@ const EvaluatePage: React.FC = () => {
                   onClick={() => navigate('/samples')}
                   className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-3 shadow-sm"
                 >
-                  <FileText size={20} className="text-cacao-600" />
-                  {t.sampleLibrary}
+                  <FileText size={20} className="text-brand-600" />
+                  {t('sampleLibrary')}
                 </button>
 
                 <button
@@ -405,10 +404,10 @@ const EvaluatePage: React.FC = () => {
                     window.scrollTo(0, 0);
                     navigate('/evaluate');
                   }}
-                  className="w-full bg-cacao-600 hover:bg-cacao-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-3 shadow-md"
+                  className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-3 shadow-md"
                 >
                   <Plus size={20} />
-                  {t.newEvaluation}
+                  {t('newEvaluation')}
                 </button>
 
                 <button

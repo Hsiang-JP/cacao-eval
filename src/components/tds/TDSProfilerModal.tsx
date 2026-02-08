@@ -7,24 +7,17 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { TDSMode, TDSEvent, TDSProfile } from '../../types';
 // import { detectInputMethod, InputMethod } from '../../utils/inputDetection';
 import { getAttributeColor } from '../../utils/colors';
-import { useLanguage } from '../../context/LanguageContext';
+import { useTranslation } from 'react-i18next';
+import { useDataTranslation } from '../../hooks/useDataTranslation';
 import TDSTimer from './TDSTimer';
 import TDSButton from './TDSButton';
 
-// Core attributes for Normal mode (CoEx standard 5)
-const CORE_ATTRIBUTES = ['cacao', 'acidity', 'bitterness', 'astringency', 'roast'];
-
-// All attributes for Expert mode
-const ALL_ATTRIBUTES = [
-    'cacao', 'acidity', 'bitterness', 'astringency', 'roast',
-    'fresh_fruit', 'browned_fruit', 'vegetal', 'floral',
-    'woody', 'spice', 'nutty', 'caramel', 'sweetness', 'defects'
-];
-
-import { ATTRIBUTE_LABELS } from '../../data/attributes';
+import { CORE_ATTRIBUTES, ALL_ATTRIBUTES } from '../../utils/tdsCalculator';
+import { currentConfig } from '../../constants';
 
 type TDSState = 'idle' | 'tasting' | 'swallowed' | 'finished';
 
@@ -39,7 +32,8 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
     onComplete,
     onCancel,
 }) => {
-    const { language } = useLanguage();
+    const { t } = useTranslation();
+    const { translateData, language } = useDataTranslation();
     const [state, setState] = useState<TDSState>('idle');
     // const [elapsedTime, setElapsedTime] = useState(0); // REMOVED: Managed by TDSTimer
     const [swallowTime, setSwallowTime] = useState<number | null>(null);
@@ -50,6 +44,14 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
 
     // Get attributes based on mode
     const attributes = mode === 'normal' ? CORE_ATTRIBUTES : ALL_ATTRIBUTES;
+
+    // Helper for labels
+    const getLabel = (attrId: string) => {
+        const attr = currentConfig.attributes.find(a => a.id === attrId);
+        const name = attr ? translateData({ en: attr.nameEn, es: attr.nameEs }) : attrId;
+        // Remove text inside parenthesis along with parenthesis
+        return name.replace(/\s*\(.*?\)\s*/g, '').trim();
+    };
 
     // Refs for high-precision timing
     const startTimeRef = useRef<number>(0);
@@ -220,35 +222,41 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
         return `${mins}:${secs.toString().padStart(2, '0')}.${ms}`;
     };
 
-    return (
-        <div className="fixed inset-0 z-[100] bg-gray-900 flex flex-col h-dvh">
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[9999] bg-gray-900 flex flex-col w-full h-[100dvh] overflow-hidden overscroll-none touch-none"
+            style={{
+                height: '100dvh',
+                maxHeight: '-webkit-fill-available' // Fallback for iOS
+            }}
+        >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 bg-gray-800">
+            <div className="flex-none flex items-center justify-between p-4 bg-gray-800 shadow-md z-10">
                 <div className="flex items-center gap-3">
                     <h2 className="text-white font-bold text-lg">
-                        {language === 'es' ? 'Perfil TDS' : 'TDS Profile'}
+                        {t('tds.profile')}
                         <span className="text-gray-400 text-sm ml-2">
-                            ({mode === 'normal' ? (language === 'es' ? 'Normal' : 'Core') : 'Expert'})
+                            ({mode === 'normal' ? t('tds.modeNormal') : t('tds.modeExpert')})
                         </span>
                     </h2>
                 </div>
                 <button
                     onClick={onCancel}
-                    className="text-gray-400 hover:text-white p-2 font-bold"
+                    className="text-gray-400 hover:text-white p-2 font-bold bg-transparent border-0 cursor-pointer"
                     aria-label="Close"
                 >
-                    {language === 'es' ? 'Cerrar' : 'Close'}
+                    {t('tds.close')}
                 </button>
             </div>
 
             {/* Timer Display */}
-            <div className="flex-none py-2 text-center">
+            <div className="flex-none py-2 text-center bg-gray-900 z-10">
 
-                {/* Swallow Time - Fixed Height Wrapper to prevent layout shift */}
+                {/* Swallow Time - Fixed Height Wrapper */}
                 <div className="h-6 flex items-center justify-center mb-1">
                     {swallowTime !== null ? (
                         <div className="text-amber-400 text-sm font-medium animate-fade-in">
-                            {language === 'es' ? 'Tragado a' : 'Swallowed at'} {formatTime(swallowTime)}
+                            {t('tds.swallowedAt')} {formatTime(swallowTime)}
                         </div>
                     ) : (
                         <div className="text-transparent text-sm select-none">Placeholder</div>
@@ -267,11 +275,11 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                             className="inline-block px-4 py-2 rounded-full text-white font-bold text-lg animate-pulse shadow-lg"
                             style={{ backgroundColor: getAttributeColor(currentAttr) }}
                         >
-                            {ATTRIBUTE_LABELS[currentAttr]?.[language] || currentAttr}
+                            {getLabel(currentAttr)}
                         </span>
                     ) : (
                         <span className="inline-block px-4 py-2 rounded-full bg-gray-800 text-gray-600 font-bold text-lg border border-gray-700">
-                            {language === 'es' ? 'Seleccione...' : 'Select...'}
+                            {t('tds.select')}
                         </span>
                     )}
                 </div>
@@ -279,65 +287,52 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
 
             {/* Single-Selection Instruction */}
             {(state === 'tasting' || state === 'swallowed') && (
-                <div className="text-center text-gray-400 text-sm mb-2 px-4">
-                    {language === 'es'
-                        ? 'Toque el sabor dominante. Solo uno a la vez.'
-                        : 'Tap the dominant flavor. Only one at a time.'}
+                <div className="flex-none text-center text-gray-400 text-sm mb-2 px-4">
+                    {t('tds.dominanceInstruction')}
                 </div>
             )}
 
-            {/* Attribute Buttons Grid */}
+            {/* Attribute Buttons Grid - Takes all remaining space */}
             <div
-                className={`flex-1 px-2 pb-2 ${state === 'idle' ? 'overflow-auto' : 'overflow-hidden'}`}
-                style={{
-                    touchAction: state !== 'idle' ? 'none' : 'auto',
-                    overscrollBehavior: 'none',
-                }}
-                onTouchMove={(e) => {
-                    if (state === 'tasting' || state === 'swallowed') {
-                        e.preventDefault();
-                    }
-                }}
+                className="flex-1 w-full px-2 pb-2 min-h-0 overflow-hidden flex flex-col"
+                style={{ touchAction: 'none' }}
             >
                 {state === 'idle' ? (
                     <div className="h-full flex items-center justify-center">
                         <button
                             onClick={handleStart}
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-6 px-12 rounded-2xl text-2xl flex items-center gap-3 shadow-lg transition-all"
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-6 px-12 rounded-2xl text-2xl flex items-center gap-3 shadow-lg transition-all transform active:scale-95"
                         >
-                            {language === 'es' ? 'Comenzar' : 'Start Tasting'}
+                            {t('tds.startTasting')}
                         </button>
                     </div>
                 ) : (
-                    <div className="h-full w-full flex justify-center">
+                    <div className="h-full w-full max-w-[700px] mx-auto">
                         <div
-                            // Compact Grid: 3 cols always (even on desktop) to reduce mouse travel
-                            // Max width constrained to 800px
-                            className={`grid gap-2 h-full w-full max-w-[700px] grid-cols-3`}
+                            className="grid gap-1 w-full h-full grid-cols-3"
                             style={{
-                                touchAction: 'none',
                                 gridTemplateRows: mode === 'normal'
-                                    ? 'repeat(2, 1fr)'  // 5 items, 3 cols -> 2 rows
-                                    : 'repeat(5, 1fr)'  // 15 items, 3 cols -> 5 rows
+                                    ? 'repeat(2, minmax(0, 1fr))'
+                                    : 'repeat(5, minmax(0, 1fr))'
                             }}
                         >
                             {attributes.map(attrId => {
                                 const isActive = currentAttr === attrId;
-                                // color is already imported
                                 const color = getAttributeColor(attrId);
 
                                 return (
-                                    <TDSButton
-                                        key={attrId}
-                                        attrId={attrId}
-                                        label={ATTRIBUTE_LABELS[attrId]?.[language] || attrId}
-                                        color={color}
-                                        inputMethod={inputMethod}
-                                        isActive={isActive}
-                                        onStart={handleButtonStart}
-                                        onStop={handleButtonStop}
-                                        disabled={state === 'finished'}
-                                    />
+                                    <div key={attrId} className="w-full h-full min-h-0">
+                                        <TDSButton
+                                            attrId={attrId}
+                                            label={getLabel(attrId)}
+                                            color={color}
+                                            inputMethod={inputMethod}
+                                            isActive={isActive}
+                                            onStart={handleButtonStart}
+                                            onStop={handleButtonStop}
+                                            disabled={state === 'finished'}
+                                        />
+                                    </div>
                                 );
                             })}
                         </div>
@@ -345,35 +340,34 @@ const TDSProfilerModal: React.FC<TDSProfilerModalProps> = ({
                 )}
             </div>
 
-            {/* Action Buttons - Fixed at bottom */}
+            {/* Action Buttons - In-flow footer (flex-none) */}
             {(state === 'tasting' || state === 'swallowed') && (
-                <div className="flex-none p-2 bg-gray-800 flex gap-2 pb-safe">
+                <div className="flex-none p-2 bg-gray-800 flex gap-2 pb-safe w-full border-t border-gray-700 shadow-md z-20">
                     <button
                         onClick={handleSwallow}
                         disabled={state !== 'tasting'}
-                        className={`flex-1 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors ${state === 'tasting'
-                            ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                        className={`flex-1 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-95 ${state === 'tasting'
+                            ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-lg'
                             : 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
                             }`}
                     >
-                        {language === 'es' ? 'Tragar' : 'Swallow'}
+                        {t('tds.swallow')}
                     </button>
 
                     <button
                         onClick={handleFinish}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-95 shadow-lg"
                     >
-                        {language === 'es' ? 'Terminar' : 'Finish'}
+                        {t('tds.finish')}
                     </button>
                 </div>
             )}
 
-            {/* Combined CSS for dynamic viewport height */}
             <style>{`
-                .h-dvh { height: 100vh; height: 100dvh; }
                 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 1rem); }
             `}</style>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -12,8 +12,9 @@ import {
 } from 'recharts';
 import { AggregatedTDSResult } from '../../utils/tdsAnalytics';
 import { getAttributeColor } from '../../utils/colors';
-import { useLanguage } from '../../context/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { ATTRIBUTE_LABELS } from '../../data/attributes';
+import { useDataTranslation } from '../../hooks/useDataTranslation';
 
 interface TDSAggregationChartProps {
     data: AggregatedTDSResult;
@@ -21,7 +22,8 @@ interface TDSAggregationChartProps {
 }
 
 const TDSAggregationChart: React.FC<TDSAggregationChartProps> = ({ data, attributeIds }) => {
-    const { language } = useLanguage();
+    const { t } = useTranslation();
+    const { translateData } = useDataTranslation();
 
     // Transform data for Recharts
     const chartData = useMemo(() => {
@@ -60,13 +62,11 @@ const TDSAggregationChart: React.FC<TDSAggregationChartProps> = ({ data, attribu
     return (
         <div className="w-full h-[500px] md:h-[600px] bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col">
             <h3 className="text-lg font-bold text-center mb-4 text-gray-700">
-                {language === 'es' ? 'Curvas de Dominancia Temporal Agregadas' : 'Aggregated Temporal Dominance Curves'}
+                {t('tds.aggTitle')}
             </h3>
 
             <p className="text-xs text-center text-gray-400 mb-2">
-                {language === 'es'
-                    ? 'Toque en la leyenda para resaltar tendencias específicas.'
-                    : 'Tap on legend items to highlight specific trends.'}
+                {t('tds.legendTip')}
             </p>
 
             <div className="flex-1 min-h-0">
@@ -83,7 +83,7 @@ const TDSAggregationChart: React.FC<TDSAggregationChartProps> = ({ data, attribu
                             domain={[0, 130]}
                             ticks={[0, 25, 50, 75, 100, 130]}
                             label={{
-                                value: language === 'es' ? '% Duración Normalizada' : '% Normalized Duration',
+                                value: t('tds.xAxisLabel'),
                                 position: 'insideBottom',
                                 offset: -10,
                                 style: { fill: '#9ca3af', fontSize: 12 }
@@ -115,8 +115,8 @@ const TDSAggregationChart: React.FC<TDSAggregationChartProps> = ({ data, attribu
                                     const isAftertaste = timeVal > 100;
                                     const displayTime = isAftertaste ? `+${timeVal - 100}%` : `${timeVal}%`;
                                     const phaseLabel = isAftertaste
-                                        ? (language === 'es' ? 'Retrogusto' : 'Aftertaste')
-                                        : (language === 'es' ? 'Fase Oral' : 'Oral Phase');
+                                        ? t('tds.aftertaste')
+                                        : t('tds.oralPhase');
 
                                     return (
                                         <div className="bg-white p-3 border border-gray-100 shadow-md rounded-lg text-xs md:text-sm">
@@ -133,7 +133,7 @@ const TDSAggregationChart: React.FC<TDSAggregationChartProps> = ({ data, attribu
                                                                 style={{ backgroundColor: item.color }}
                                                             />
                                                             <span className="text-gray-600 font-medium">
-                                                                {ATTRIBUTE_LABELS[item.name]?.[language] || item.name}
+                                                                {translateData(ATTRIBUTE_LABELS[item.name]) || item.name}
                                                             </span>
                                                         </span>
                                                         <span className="font-bold text-gray-800">
@@ -169,7 +169,7 @@ const TDSAggregationChart: React.FC<TDSAggregationChartProps> = ({ data, attribu
                             stroke="#374151"
                             strokeWidth={2}
                             label={{
-                                value: language === 'es' ? 'TRAGAR' : 'SWALLOW',
+                                value: t('tds.swallowVerb'),
                                 position: 'top',
                                 fill: '#374151',
                                 fontSize: 11,
@@ -211,7 +211,7 @@ const TDSAggregationChart: React.FC<TDSAggregationChartProps> = ({ data, attribu
                                 strokeOpacity={getOpacity(attrId)}
                                 dot={false}
                                 activeDot={{ r: 6 }}
-                                name={ATTRIBUTE_LABELS[attrId]?.[language] || attrId}
+                                name={translateData(ATTRIBUTE_LABELS[attrId]) || attrId}
                                 connectNulls
                                 isAnimationActive={false}
                             />
@@ -221,9 +221,9 @@ const TDSAggregationChart: React.FC<TDSAggregationChartProps> = ({ data, attribu
             </div>
 
             <div className="mt-2 text-xs text-center text-gray-400 pt-4 border-t border-gray-100">
-                <span className="font-bold">Ps:</span> {language === 'es' ? 'Nivel de Significancia' : 'Significance Level'} (95%)
+                <span className="font-bold">Ps:</span> {t('tds.significanceLevel')} (95%)
                 <span className="mx-2">|</span>
-                <span className="font-bold">P0:</span> {language === 'es' ? 'Nivel de Azar' : 'Chance Level'}
+                <span className="font-bold">P0:</span> {t('tds.chanceLevel')}
             </div>
         </div>
     );

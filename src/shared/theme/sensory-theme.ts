@@ -1,6 +1,6 @@
 export const SENSORY_PALETTE = {
     // Brand / Material Colors
-    cacao: {
+    brand: {
         50: '#fdf8f6',
         100: '#f2e8e5',
         200: '#eaddd7',
