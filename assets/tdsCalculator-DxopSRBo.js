@@ -1,0 +1,1 @@
+import{b as s}from"./index-BszND5xp.js";const n=s.meta.primaryAttributeIds,T=s.meta.defectAttributeIds,o=s.attributes.map(t=>t.id).filter(t=>!n.includes(t)&&!T.includes(t)),i=[...n,...o,...T],u=t=>s.tds.analyze(t),A=(t,a)=>t.map(e=>{const r=a.get(e.id);return r!==void 0?{...e,score:r.score}:e});export{i as A,n as C,T as D,u as a,A as b};
