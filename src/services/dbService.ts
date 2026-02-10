@@ -1,4 +1,5 @@
 import { GradingSession, StoredSample } from '../types';
+export type { StoredSample };
 
 // Database configuration
 const DB_NAME = 'CoExEvaluations';

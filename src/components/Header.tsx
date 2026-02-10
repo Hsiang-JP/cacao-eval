@@ -25,7 +25,7 @@ const Header: React.FC = () => {
               <img src={currentConfig.assets.logo} alt={`${currentConfig.name[language]} flavor profiling Logo`} className="h-12 w-auto" />
             </div>
             <div>
-              <h1 className="font-serif text-2xl font-bold tracking-wide text-brand-50">{t('title')}</h1>
+              <h1 className="text-2xl font-bold tracking-wide text-brand-50">{t('title')}</h1>
               <p className="text-brand-300 text-xs tracking-widest uppercase">{t('subtitle')}</p>
             </div>
           </div>
@@ -34,31 +34,31 @@ const Header: React.FC = () => {
           <div className="flex justify-center">
             <button
               onClick={() => setLanguage(language === 'en' ? 'es' : 'en')}
-              className="flex items-center gap-2 text-brand-200 hover:text-white transition-colors bg-brand-800 px-4 py-1.5 rounded-full border border-brand-700 shadow-sm"
+              className="flex items-center gap-2 text-brand-100 hover:text-white hover:bg-brand-700 transition-all duration-200 bg-brand-800/50 px-4 py-1.5 rounded-full border border-white/10 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
             >
               <Languages size={16} /> {language === 'en' ? 'Español' : 'English'}
             </button>
           </div>
 
           {/* Right: Navigation Buttons */}
-          <div className="flex gap-4 text-sm font-medium items-center flex-1 justify-end">
+          <div className="flex gap-6 text-sm font-medium items-center flex-1 justify-end">
             <button
               onClick={() => navigate('/evaluate')}
-              className={`flex items-center gap-2 transition-colors ${location.pathname === '/evaluate' ? 'text-white font-bold' : 'text-brand-200 hover:text-white'}`}
+              className={`flex items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 ${location.pathname === '/evaluate' ? 'text-white font-bold border-b-2 border-accent-orange pb-0.5' : 'text-brand-200 hover:text-accent-orange'}`}
             >
               {t('evaluation')}
             </button>
 
             <button
               onClick={() => navigate('/samples')}
-              className={`flex items-center gap-2 transition-colors ${location.pathname === '/samples' ? 'text-white font-bold' : 'text-brand-200 hover:text-white'}`}
+              className={`flex items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 ${location.pathname === '/samples' ? 'text-white font-bold border-b-2 border-accent-orange pb-0.5' : 'text-brand-200 hover:text-accent-orange'}`}
             >
               {t('sampleLibrary')}
             </button>
 
             <button
               onClick={() => setIsGuidelinesOpen(true)}
-              className="flex items-center gap-2 text-brand-200 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-brand-200 hover:text-accent-teal transition-all duration-200 hover:-translate-y-0.5"
             >
               {t('guidelines')}
             </button>

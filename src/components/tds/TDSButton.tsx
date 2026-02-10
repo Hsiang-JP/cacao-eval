@@ -76,14 +76,15 @@ const TDSButton: React.FC<TDSButtonProps> = ({
     relative flex items-center justify-center
     w-full h-full
     px-2 py-1 rounded-xl font-bold text-xs uppercase tracking-wide leading-tight
-    transition-all duration-150 select-none
+    transition-all duration-100 ease-out select-none
     touch-manipulation
     whitespace-normal text-center break-words
+    border border-white/10
   `;
 
     const activeClasses = isActive
-        ? `ring-4 ring-offset-2 ring-white/50 scale-95 shadow-lg`
-        : `hover:scale-105 shadow-md`;
+        ? `ring-2 ring-offset-1 ring-white/80 scale-95 shadow-inner`
+        : `hover:scale-105 hover:shadow-lg hover:brightness-110 active:scale-90`;
 
     const disabledClasses = disabled
         ? 'opacity-50 cursor-not-allowed'

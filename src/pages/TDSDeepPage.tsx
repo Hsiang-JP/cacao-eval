@@ -9,31 +9,15 @@ import { StoredSample } from '../services/dbService';
 import { aggregateReplications, TDSReplication, AggregatedTDSResult } from '../utils/tdsAnalytics';
 import TDSAggregationChart from '../components/tds/TDSAggregationChart';
 import TDSStreamGraph from '../components/tds/TDSStreamGraph';
+import { useSamples } from '../hooks/useSamples';
 
 const TDSDeepPage: React.FC = () => {
     const { t, language } = useLanguage();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const ids = searchParams.get('ids')?.split(',') || [];
-    const [activeTab, setActiveTab] = React.useState<'single' | 'multiple'>('multiple'); // Default to multiple as per flow context usually implies comparison
-    const [samples, setSamples] = React.useState<StoredSample[]>([]);
-
-    // Fetch samples
-    React.useEffect(() => {
-        const loadSamples = async () => {
-            if (ids.length === 0) return;
-            try {
-                // Dynamically import to resolve circular dependencies if any, or just standard pattern
-                const dbModule = await import('../services/dbService');
-                const allSamples = await dbModule.dbService.getAllSamples();
-                const filtered = allSamples.filter(s => ids.includes(s.id));
-                setSamples(filtered);
-            } catch (error) {
-                console.error("Failed to load samples", error);
-            }
-        };
-        loadSamples();
-    }, [ids.join(',')]);
+    const ids = React.useMemo(() => searchParams.get('ids')?.split(',') || [], [searchParams]);
+    const { samples, loading } = useSamples(ids);
+    const [activeTab, setActiveTab] = React.useState<'single' | 'multiple'>('multiple');
 
     // 2. Compute Unique Attributes ONCE
     const uniqueAttributes = React.useMemo(() => {
@@ -123,13 +107,16 @@ const TDSDeepPage: React.FC = () => {
                     {activeTab === 'single' ? (
                         <div className="space-y-6 animate-fade-in">
                             {/* SINGLE VIEW */}
-                            {samples.length > 0 && (
+                            {loading ? (
+                                <div className="text-center py-20 text-gray-400 animate-pulse">
+                                    {language === 'es' ? 'Cargando...' : 'Loading...'}
+                                </div>
+                            ) : samples.length > 0 ? (
                                 <SingleViewHandler
                                     samples={samples}
                                     activeAttributeIds={activeAttributeIds}
                                 />
-                            )}
-                            {samples.length === 0 && (
+                            ) : (
                                 <div className="text-center py-20 text-gray-400">
                                     {language === 'es' ? 'No hay muestras seleccionadas.' : 'No samples selected.'}
                                 </div>
@@ -140,18 +127,28 @@ const TDSDeepPage: React.FC = () => {
 
                             {/* List of Samples (Card + Timeline) */}
                             <div className="space-y-6">
-                                {samples.map(sample => (
-                                    <div key={sample.id}>
-                                        <TDSDeepSampleRow sample={sample} />
-                                    </div>
-                                ))}
-
-                                {samples.length === 0 && (
+                                {loading ? (
                                     <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
                                         <div className="animate-pulse text-gray-400">
                                             {language === 'es' ? 'Cargando muestras...' : 'Loading samples...'}
                                         </div>
                                     </div>
+                                ) : (
+                                    <>
+                                        {samples.map(sample => (
+                                            <div key={sample.id}>
+                                                <TDSDeepSampleRow sample={sample} />
+                                            </div>
+                                        ))}
+
+                                        {samples.length === 0 && (
+                                            <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+                                                <div className="text-gray-400">
+                                                    {language === 'es' ? 'No se encontraron muestras.' : 'No samples found.'}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
 
