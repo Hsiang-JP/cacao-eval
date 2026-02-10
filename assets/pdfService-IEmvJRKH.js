@@ -1,4 +1,4 @@
-import{j as at,E as it}from"./jspdf.es.min-IBSZmzWg.js";import{m as rt,i as ot,k as X,b as G}from"./index-BszND5xp.js";import{A as Z}from"./attributes-zDdy4c7G.js";import{g as V,C as et,r as lt}from"./colors-BQGDY4Um.js";import{a as tt}from"./tdsCalculator-DxopSRBo.js";import{f as st,b as ft}from"./dateUtils-BSM0ms4X.js";var nt={exports:{}};const ut=rt(at);/*!
+import{j as at,E as it}from"./jspdf.es.min-Dqj2srgi.js";import{m as rt,i as ot,k as X,b as G}from"./index-CJWcQEdu.js";import{A as Z}from"./attributes-zDdy4c7G.js";import{g as V,C as et,r as lt}from"./dbService-gir1Ecq8.js";import{a as tt}from"./tdsCalculator-BKwsfyiu.js";import{f as st,b as ft}from"./dateUtils-BSM0ms4X.js";var nt={exports:{}};const ut=rt(at);/*!
  * 
  *               jsPDF AutoTable plugin v3.8.4
  *
