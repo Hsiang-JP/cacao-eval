@@ -555,27 +555,41 @@ const CSV_HEADERS_ES = [
 // ============================================================================
 
 const calculateAttributeScore = (id: string, subAttributes: SubAttribute[]): number => {
-    // 1. Defect Logic (Standard)
-    if (id === 'defects') {
-        const total = subAttributes.reduce((sum, sub) => sum + sub.score, 0);
-        return Math.min(10, total);
+    const scores = subAttributes.map(s => s.score);
+    const sorted = [...scores].sort((a, b) => b - a); // Descending
+    const getVal = (k: number) => sorted[k - 1] || 0; // 1-based index
+
+    let total = 0;
+
+    switch (id) {
+        case 'acidity':
+        case 'defects':
+            total = scores.reduce((a, b) => a + b, 0);
+            break;
+        case 'fresh_fruit':
+            // Acidity/Fresh Fruit nuance aggregation
+            total = getVal(1) + (getVal(2) * 0.75) + ((getVal(3) + getVal(4) + getVal(5)) / 3);
+            break;
+        case 'browned_fruit':
+        case 'woody':
+        case 'spice':
+            // Medium complexity groups
+            total = getVal(1) + (getVal(2) * 0.75) + (getVal(3) / 3);
+            break;
+        case 'vegetal':
+        case 'floral':
+        case 'nutty':
+            // Basic complexity groups
+            total = getVal(1) + (getVal(2) * 0.75);
+            break;
+        default:
+            // Fallback for non-modeled attributes
+            total = getVal(1);
     }
 
-    // 2. Acidity Logic (Average of highest 2)
-    if (id === 'acidity') {
-        const scores = subAttributes.map(s => s.score).sort((a, b) => b - a);
-        const top2 = scores.slice(0, 2);
-        if (top2.length === 0 || top2[0] === 0) return 0;
-        const total = top2.reduce((sum, val) => sum + val, 0);
-        return Math.round(total / top2.length);
-    }
-
-    // 3. Default Logic (Average of non-zero)
-    const activeScores = subAttributes.map(s => s.score).filter(s => s > 0);
-    if (activeScores.length === 0) return 0;
-
-    const total = activeScores.reduce((sum, val) => sum + val, 0);
-    return Math.round(total / activeScores.length);
+    const cappedTotal = Math.min(total, 10);
+    // Use EPSILON rounding to match original implementation precision
+    return Math.round((cappedTotal + Number.EPSILON) * 10) / 10;
 };
 
 // ============================================================================
